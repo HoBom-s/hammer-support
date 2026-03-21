@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Hammer.Support.Api/Hammer.Support.Api.csproj" />
+    <Project Path="src/Hammer.Support.Application/Hammer.Support.Application.csproj" />
+    <Project Path="src/Hammer.Support.Domain/Hammer.Support.Domain.csproj" />
+    <Project Path="src/Hammer.Support.Infrastructure/Hammer.Support.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Hammer.Support.Tests/Hammer.Support.Tests.csproj" />
+  </Folder>
+</Solution>
