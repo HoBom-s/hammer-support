@@ -20,10 +20,28 @@ public sealed class OnbidKamcoItem
     public long PbctNo { get; set; }
 
     /// <summary>
+    /// Gets or sets the auction condition number (공매조건번호).
+    /// </summary>
+    [XmlElement("PBCT_CDTN_NO")]
+    public long PbctCdtnNo { get; set; }
+
+    /// <summary>
     /// Gets or sets the item number.
     /// </summary>
     [XmlElement("CLTR_NO")]
     public long CltrNo { get; set; }
+
+    /// <summary>
+    /// Gets or sets the item history number (물건이력번호).
+    /// </summary>
+    [XmlElement("CLTR_HSTR_NO")]
+    public long CltrHstrNo { get; set; }
+
+    /// <summary>
+    /// Gets or sets the item management number (물건관리번호).
+    /// </summary>
+    [XmlElement("CLTR_MNMT_NO")]
+    public string CltrMnmtNo { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the item name.
@@ -60,6 +78,24 @@ public sealed class OnbidKamcoItem
     /// </summary>
     [XmlElement("APSL_ASES_AVG_AMT")]
     public long ApslAsesAvgAmt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum bid price rate (최저입찰가율).
+    /// </summary>
+    [XmlElement("FEE_RATE")]
+    public string FeeRate { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the disposal method code (처분방식코드: 0001=매각, 0002=임대).
+    /// </summary>
+    [XmlElement("DPSL_MTD_CD")]
+    public string DpslMtdCd { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the disposal method name (처분방식명).
+    /// </summary>
+    [XmlElement("DPSL_MTD_NM")]
+    public string DpslMtdNm { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the bid method name.

@@ -47,10 +47,11 @@ public sealed class KamcoApiClient : IKamcoApiClient
     {
         // WARNING: ServiceKey is in the query string per Onbid API design.
         // Never log this URI to avoid credential exposure.
-        Uri uri = new($"{_options.KamcoBaseUrl}/getKamcoPblsalThingInquire"
+        Uri uri = new($"{_options.KamcoBaseUrl}/getKamcoPbctCltrList"
             + $"?ServiceKey={_options.ServiceKey}"
             + $"&numOfRows={numOfRows}"
-            + $"&pageNo={pageNo}");
+            + $"&pageNo={pageNo}"
+            + $"&DPSL_MTD_CD=0001");
 
         _logger.LogInformation("Fetching KAMCO auction page {PageNo} ({NumOfRows} rows)", pageNo, numOfRows);
 
@@ -84,13 +85,19 @@ public sealed class KamcoApiClient : IKamcoApiClient
     {
         PlnmNo = dto.PlnmNo,
         PbctNo = dto.PbctNo,
+        PbctCdtnNo = dto.PbctCdtnNo,
         CltrNo = dto.CltrNo,
+        CltrHstrNo = dto.CltrHstrNo,
+        CltrMnmtNo = dto.CltrMnmtNo,
         CltrNm = dto.CltrNm,
         CtgrFullNm = dto.CtgrFullNm,
         LdnmAdrs = dto.LdnmAdrs,
         NmrdAdrs = dto.NmrdAdrs,
+        DpslMtdCd = dto.DpslMtdCd,
+        DpslMtdNm = dto.DpslMtdNm,
         MinBidPrc = dto.MinBidPrc,
         ApslAsesAvgAmt = dto.ApslAsesAvgAmt,
+        FeeRate = dto.FeeRate,
         BidMtdNm = dto.BidMtdNm,
         PbctCltrStatNm = dto.PbctCltrStatNm,
         PbctBegnDtm = dto.PbctBegnDtm,
