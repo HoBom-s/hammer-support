@@ -120,6 +120,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
                     break;
 
                 pageNo++;
+                await Task.Delay(200, cancellationToken);
             }
         }
 #pragma warning disable CA1031
