@@ -111,7 +111,7 @@ public sealed record KamcoAuctionItem
     public int IqryCnt { get; init; }
 
     /// <summary>
-    /// Gets the item image files URL (물건이미지).
+    /// Gets the item image file URLs (물건이미지).
     /// </summary>
-    public string? CltrImgFiles { get; init; }
+    public IReadOnlyList<string> CltrImgFiles { get; init; } = [];
 }

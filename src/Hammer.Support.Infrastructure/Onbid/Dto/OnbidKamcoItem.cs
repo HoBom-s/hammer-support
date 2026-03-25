@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Xml.Serialization;
 
 namespace Hammer.Support.Infrastructure.Onbid.Dto;
@@ -134,8 +135,11 @@ public sealed class OnbidKamcoItem
     public int IqryCnt { get; set; }
 
     /// <summary>
-    /// Gets or sets the item image files URL.
+    /// Gets or sets the item image file URLs.
     /// </summary>
-    [XmlElement("CLTR_IMG_FILES")]
-    public string? CltrImgFiles { get; set; }
+    [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "XmlSerializer requires writable collection")]
+    [SuppressMessage("Design", "CA1002:Do not expose generic lists", Justification = "XmlSerializer requires List<T>")]
+    [XmlArray("CLTR_IMG_FILES")]
+    [XmlArrayItem("CLTR_IMG_FILE")]
+    public List<string> CltrImgFiles { get; set; } = [];
 }
