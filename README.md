@@ -9,7 +9,7 @@ Hammer 경매 플랫폼의 Support Service.
 
 ## Features
 
-- 온비드(캠코) 공매 데이터 수집 → Kafka 발행 (매일 오전 9시 배치, stateless)
+- 온비드(캠코) 공매 데이터 수집 → Kafka 발행 (매일 배치, 실행 시각 설정 가능, stateless)
 - FCM 푸시 알림
 - 기타 cross-cutting 서포트 기능
 
@@ -36,9 +36,19 @@ hammer-collector ← 각 서비스 로그 수집 → ELK
 | [hammer-collector](https://github.com/HoBom-s/hammer-collector) | ELK Logging |
 | [hammer-support](https://github.com/HoBom-s/hammer-support) | Data Fetching, FCM, Support |
 
+## Configuration
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `Onbid__ServiceKey` | - | 온비드 API 인증키 (필수) |
+| `Onbid__CollectionHour` | `9` | 배치 실행 시각 (0-23, KST) |
+| `Onbid__PageSize` | `100` | API 페이지당 조회 건수 |
+| `Kafka__BootstrapServers` | `localhost:9092` | Kafka 브로커 주소 |
+
 ## Getting Started
 
 ```bash
+cp .env.example .env.local   # ServiceKey 등 환경변수 설정
 dotnet restore
 dotnet run --project src/Hammer.Support.Api
 ```

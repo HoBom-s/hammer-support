@@ -53,6 +53,11 @@ public sealed class KamcoCollectionJob : BackgroundService
         _logger = logger;
     }
 
+    /// <summary>
+    ///     Calculates the delay from now until the next run at <paramref name="targetHour"/> KST.
+    /// </summary>
+    /// <param name="targetHour">Hour of day (0-23) in KST to schedule the next run.</param>
+    /// <returns>Time remaining until the next scheduled run.</returns>
     internal static TimeSpan CalculateDelayUntilNextRun(int targetHour)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
