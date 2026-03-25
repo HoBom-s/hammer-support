@@ -10,8 +10,8 @@ namespace Hammer.Support.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/collections")]
-[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by MVC framework")]
-internal sealed class CollectionController : ControllerBase
+[SuppressMessage("Performance", "CA1515:Consider making public types internal", Justification = "MVC requires public controllers for discovery")]
+public sealed class CollectionController : ControllerBase
 {
     /// <summary>
     ///     Triggers a KAMCO auction data collection run.
