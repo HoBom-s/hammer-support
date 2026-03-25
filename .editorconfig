@@ -246,3 +246,10 @@ dotnet_diagnostic.SA1309.severity = none
 dotnet_diagnostic.SA1503.severity = none
 # SA0001: XML comment analysis disabled
 dotnet_diagnostic.SA0001.severity = none
+
+#### Test project overrides ####
+[tests/**/*.cs]
+# SA1600: Test methods are self-documenting by name
+dotnet_diagnostic.SA1600.severity = none
+# IDE1006: Test methods follow MethodName_Scenario_Expected naming
+dotnet_naming_rule.async_methods_should_end_with_async.severity = none
