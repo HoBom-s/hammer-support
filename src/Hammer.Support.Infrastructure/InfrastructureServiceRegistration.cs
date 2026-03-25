@@ -28,6 +28,7 @@ public static class InfrastructureServiceRegistration
         // Onbid
         services.Configure<OnbidOptions>(configuration.GetSection(OnbidOptions.SectionName));
         services.AddHttpClient<IKamcoApiClient, KamcoApiClient>();
+        services.AddScoped<ICollectKamcoAuctionsUseCase, CollectKamcoAuctionsUseCase>();
         services.AddHostedService<KamcoCollectionJob>();
 
         return services;
