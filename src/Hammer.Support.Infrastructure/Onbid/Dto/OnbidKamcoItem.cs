@@ -5,6 +5,8 @@ namespace Hammer.Support.Infrastructure.Onbid.Dto;
 
 /// <summary>
 /// Single KAMCO auction item as returned by the Onbid XML API.
+/// All numeric fields are kept as strings because the Onbid API may return
+/// non-numeric placeholders such as "-" for missing values.
 /// </summary>
 public sealed class OnbidKamcoItem
 {
@@ -12,31 +14,31 @@ public sealed class OnbidKamcoItem
     /// Gets or sets the announcement number.
     /// </summary>
     [XmlElement("PLNM_NO")]
-    public long PlnmNo { get; set; }
+    public string PlnmNo { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the auction number.
     /// </summary>
     [XmlElement("PBCT_NO")]
-    public long PbctNo { get; set; }
+    public string PbctNo { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the auction condition number (공매조건번호).
     /// </summary>
     [XmlElement("PBCT_CDTN_NO")]
-    public long PbctCdtnNo { get; set; }
+    public string PbctCdtnNo { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the item number.
     /// </summary>
     [XmlElement("CLTR_NO")]
-    public long CltrNo { get; set; }
+    public string CltrNo { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the item history number (물건이력번호).
     /// </summary>
     [XmlElement("CLTR_HSTR_NO")]
-    public long CltrHstrNo { get; set; }
+    public string CltrHstrNo { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the item management number (물건관리번호).
@@ -72,13 +74,13 @@ public sealed class OnbidKamcoItem
     /// Gets or sets the minimum bid price.
     /// </summary>
     [XmlElement("MIN_BID_PRC")]
-    public long MinBidPrc { get; set; }
+    public string MinBidPrc { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the appraisal amount.
     /// </summary>
     [XmlElement("APSL_ASES_AVG_AMT")]
-    public long ApslAsesAvgAmt { get; set; }
+    public string ApslAsesAvgAmt { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the minimum bid price rate (최저입찰가율).
@@ -126,13 +128,13 @@ public sealed class OnbidKamcoItem
     /// Gets or sets the failed bid count.
     /// </summary>
     [XmlElement("USCBD_CNT")]
-    public int UscbdCnt { get; set; }
+    public string UscbdCnt { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the inquiry count.
     /// </summary>
     [XmlElement("IQRY_CNT")]
-    public int IqryCnt { get; set; }
+    public string IqryCnt { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the item image file URLs.

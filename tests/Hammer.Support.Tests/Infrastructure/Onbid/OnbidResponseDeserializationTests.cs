@@ -85,15 +85,15 @@ public sealed class OnbidResponseDeserializationTests
         Assert.Equal(2, response.Body.Items.ItemList.Count);
 
         OnbidKamcoItem first = response.Body.Items.ItemList[0];
-        Assert.Equal(100, first.PlnmNo);
-        Assert.Equal(200, first.PbctNo);
-        Assert.Equal(300, first.CltrNo);
+        Assert.Equal("100", first.PlnmNo);
+        Assert.Equal("200", first.PbctNo);
+        Assert.Equal("300", first.CltrNo);
         Assert.Equal("서울 강남구 역삼동", first.CltrNm);
-        Assert.Equal(500000000, first.MinBidPrc);
-        Assert.Equal(700000000, first.ApslAsesAvgAmt);
+        Assert.Equal("500000000", first.MinBidPrc);
+        Assert.Equal("700000000", first.ApslAsesAvgAmt);
         Assert.Equal("20260325100000", first.PbctBegnDtm);
-        Assert.Equal(3, first.UscbdCnt);
-        Assert.Equal(42, first.IqryCnt);
+        Assert.Equal("3", first.UscbdCnt);
+        Assert.Equal("42", first.IqryCnt);
     }
 
     [Fact]

@@ -83,11 +83,11 @@ public sealed class KamcoApiClient : IKamcoApiClient
 
     private static KamcoAuctionItem MapToDomain(OnbidKamcoItem dto) => new()
     {
-        PlnmNo = dto.PlnmNo,
-        PbctNo = dto.PbctNo,
-        PbctCdtnNo = dto.PbctCdtnNo,
-        CltrNo = dto.CltrNo,
-        CltrHstrNo = dto.CltrHstrNo,
+        PlnmNo = ParseLong(dto.PlnmNo),
+        PbctNo = ParseLong(dto.PbctNo),
+        PbctCdtnNo = ParseLong(dto.PbctCdtnNo),
+        CltrNo = ParseLong(dto.CltrNo),
+        CltrHstrNo = ParseLong(dto.CltrHstrNo),
         CltrMnmtNo = dto.CltrMnmtNo,
         CltrNm = dto.CltrNm,
         CtgrFullNm = dto.CtgrFullNm,
@@ -95,15 +95,21 @@ public sealed class KamcoApiClient : IKamcoApiClient
         NmrdAdrs = dto.NmrdAdrs,
         DpslMtdCd = dto.DpslMtdCd,
         DpslMtdNm = dto.DpslMtdNm,
-        MinBidPrc = dto.MinBidPrc,
-        ApslAsesAvgAmt = dto.ApslAsesAvgAmt,
+        MinBidPrc = ParseLong(dto.MinBidPrc),
+        ApslAsesAvgAmt = ParseLong(dto.ApslAsesAvgAmt),
         FeeRate = dto.FeeRate,
         BidMtdNm = dto.BidMtdNm,
         PbctCltrStatNm = dto.PbctCltrStatNm,
         PbctBegnDtm = dto.PbctBegnDtm,
         PbctClsDtm = dto.PbctClsDtm,
-        UscbdCnt = dto.UscbdCnt,
-        IqryCnt = dto.IqryCnt,
+        UscbdCnt = ParseInt(dto.UscbdCnt),
+        IqryCnt = ParseInt(dto.IqryCnt),
         CltrImgFiles = dto.CltrImgFiles,
     };
+
+    private static long ParseLong(string value) =>
+        long.TryParse(value, out var result) ? result : 0;
+
+    private static int ParseInt(string value) =>
+        int.TryParse(value, out var result) ? result : 0;
 }
