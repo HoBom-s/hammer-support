@@ -145,7 +145,10 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
 
         return new CollectionResult
         {
-            TotalCount = totalCount, Processed = totalProcessed, Failed = totalFailed, ElapsedMs = sw.ElapsedMilliseconds,
+            TotalCount = totalCount,
+            Processed = totalProcessed,
+            Failed = totalFailed,
+            ElapsedMs = sw.ElapsedMilliseconds,
         };
     }
 }
