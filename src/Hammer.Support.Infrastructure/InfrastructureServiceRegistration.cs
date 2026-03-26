@@ -1,6 +1,9 @@
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Infrastructure.Kafka;
 using Hammer.Support.Infrastructure.Onbid;
+using Hammer.Support.Infrastructure.Onbid.CodeInfo;
+using Hammer.Support.Infrastructure.Onbid.Institution;
+using Hammer.Support.Infrastructure.Onbid.Kamco;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,8 +34,18 @@ public static class InfrastructureServiceRegistration
         {
             client.Timeout = TimeSpan.FromSeconds(60);
         });
+        services.AddHttpClient<IInstitutionApiClient, InstitutionApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddHttpClient<ICodeInfoApiClient, CodeInfoApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
         services.AddScoped<ICollectKamcoAuctionsUseCase, CollectKamcoAuctionsUseCase>();
-        services.AddHostedService<KamcoCollectionJob>();
+        services.AddScoped<ICollectInstitutionAuctionsUseCase, CollectInstitutionAuctionsUseCase>();
+        services.AddScoped<ICollectCodeInfoUseCase, CollectCodeInfoUseCase>();
+        services.AddHostedService<OnbidCollectionJob>();
 
         return services;
     }

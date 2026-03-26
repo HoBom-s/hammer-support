@@ -8,7 +8,7 @@ using Hammer.Support.Infrastructure.Onbid.Dto;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Hammer.Support.Infrastructure.Onbid;
+namespace Hammer.Support.Infrastructure.Onbid.Kamco;
 
 /// <summary>
 /// HTTP client for fetching KAMCO auction items from the Onbid API.

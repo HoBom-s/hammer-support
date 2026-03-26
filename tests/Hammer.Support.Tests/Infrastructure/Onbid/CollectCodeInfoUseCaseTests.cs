@@ -1,8 +1,9 @@
+using Hammer.Support.Application;
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Application.Models;
 using Hammer.Support.Domain.Models;
 using Hammer.Support.Infrastructure.Onbid;
-using Hammer.Support.Infrastructure.Onbid.Kamco;
+using Hammer.Support.Infrastructure.Onbid.CodeInfo;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -10,9 +11,9 @@ using NSubstitute.ExceptionExtensions;
 
 namespace Hammer.Support.Tests.Infrastructure.Onbid;
 
-public sealed class CollectKamcoAuctionsUseCaseTests
+public sealed class CollectCodeInfoUseCaseTests
 {
-    private readonly IKamcoApiClient _client = Substitute.For<IKamcoApiClient>();
+    private readonly ICodeInfoApiClient _client = Substitute.For<ICodeInfoApiClient>();
     private readonly IEventPublisher _publisher = Substitute.For<IEventPublisher>();
 
     private readonly OnbidOptions _options = new() { PageSize = 2 };
@@ -20,23 +21,23 @@ public sealed class CollectKamcoAuctionsUseCaseTests
     [Fact]
     public async Task ExecuteAsync_PublishesAllItemsAcrossPages()
     {
-        KamcoAuctionItem item1 = new() { PlnmNo = 1, PbctNo = 10, CltrNo = 100, CltrNm = "Item1" };
-        KamcoAuctionItem item2 = new() { PlnmNo = 2, PbctNo = 20, CltrNo = 200, CltrNm = "Item2" };
-        KamcoAuctionItem item3 = new() { PlnmNo = 3, PbctNo = 30, CltrNo = 300, CltrNm = "Item3" };
+        OnbidCodeItem item1 = new() { CtgrId = "001", CtgrNm = "토지" };
+        OnbidCodeItem item2 = new() { CtgrId = "002", CtgrNm = "건물" };
+        OnbidCodeItem item3 = new() { CtgrId = "003", CtgrNm = "차량" };
 
         _client.FetchPageAsync(1, 2, Arg.Any<CancellationToken>())
-            .Returns(new KamcoPageResult { TotalCount = 3, Items = [item1, item2] });
+            .Returns(new CodeInfoPageResult { TotalCount = 3, Items = [item1, item2] });
         _client.FetchPageAsync(2, 2, Arg.Any<CancellationToken>())
-            .Returns(new KamcoPageResult { TotalCount = 3, Items = [item3] });
+            .Returns(new CodeInfoPageResult { TotalCount = 3, Items = [item3] });
 
-        CollectKamcoAuctionsUseCase useCase = CreateUseCase();
+        CollectCodeInfoUseCase useCase = CreateUseCase();
 
         CollectionResult result = await useCase.ExecuteAsync(CancellationToken.None);
 
         Assert.False(result.Skipped);
         Assert.Equal(3, result.Processed);
         await _publisher.Received(3).PublishAsync(
-            "onbid-kamco-auction",
+            KafkaTopics.CodeInfo,
             Arg.Any<string>(),
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
@@ -46,9 +47,9 @@ public sealed class CollectKamcoAuctionsUseCaseTests
     public async Task ExecuteAsync_EmptyFirstPage_PublishesNothing()
     {
         _client.FetchPageAsync(1, 2, Arg.Any<CancellationToken>())
-            .Returns(new KamcoPageResult { TotalCount = 0, Items = [] });
+            .Returns(new CodeInfoPageResult { TotalCount = 0, Items = [] });
 
-        CollectKamcoAuctionsUseCase useCase = CreateUseCase();
+        CollectCodeInfoUseCase useCase = CreateUseCase();
 
         CollectionResult result = await useCase.ExecuteAsync(CancellationToken.None);
 
@@ -66,7 +67,7 @@ public sealed class CollectKamcoAuctionsUseCaseTests
         _client.FetchPageAsync(1, 2, Arg.Any<CancellationToken>())
             .ThrowsAsync(new HttpRequestException("Connection refused"));
 
-        CollectKamcoAuctionsUseCase useCase = CreateUseCase();
+        CollectCodeInfoUseCase useCase = CreateUseCase();
 
         CollectionResult result = await useCase.ExecuteAsync(CancellationToken.None);
 
@@ -74,20 +75,20 @@ public sealed class CollectKamcoAuctionsUseCaseTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_UsesCorrectKafkaKey()
+    public async Task ExecuteAsync_UsesCtgrIdAsKafkaKey()
     {
-        KamcoAuctionItem item = new() { PlnmNo = 10, PbctNo = 20, CltrNo = 30 };
+        OnbidCodeItem item = new() { CtgrId = "001", CtgrNm = "토지" };
 
         _client.FetchPageAsync(1, 2, Arg.Any<CancellationToken>())
-            .Returns(new KamcoPageResult { TotalCount = 1, Items = [item] });
+            .Returns(new CodeInfoPageResult { TotalCount = 1, Items = [item] });
 
-        CollectKamcoAuctionsUseCase useCase = CreateUseCase();
+        CollectCodeInfoUseCase useCase = CreateUseCase();
 
         await useCase.ExecuteAsync(CancellationToken.None);
 
         await _publisher.Received(1).PublishAsync(
-            "onbid-kamco-auction",
-            "10-20-30",
+            KafkaTopics.CodeInfo,
+            "001",
             Arg.Any<string>(),
             Arg.Any<CancellationToken>());
     }
@@ -95,10 +96,10 @@ public sealed class CollectKamcoAuctionsUseCaseTests
     [Fact]
     public async Task ExecuteAsync_SerializesItemAsCamelCaseJson()
     {
-        KamcoAuctionItem item = new() { PlnmNo = 1, PbctNo = 2, CltrNo = 3, CltrNm = "test-item" };
+        OnbidCodeItem item = new() { CtgrId = "001", CtgrNm = "land", CtgrHirkId = "000", CtgrHirkNm = "all" };
 
         _client.FetchPageAsync(1, 2, Arg.Any<CancellationToken>())
-            .Returns(new KamcoPageResult { TotalCount = 1, Items = [item] });
+            .Returns(new CodeInfoPageResult { TotalCount = 1, Items = [item] });
 
         var capturedValue = string.Empty;
         await _publisher.PublishAsync(
@@ -107,20 +108,21 @@ public sealed class CollectKamcoAuctionsUseCaseTests
             Arg.Do<string>(v => capturedValue = v),
             Arg.Any<CancellationToken>());
 
-        CollectKamcoAuctionsUseCase useCase = CreateUseCase();
+        CollectCodeInfoUseCase useCase = CreateUseCase();
 
         await useCase.ExecuteAsync(CancellationToken.None);
 
-        Assert.Contains("\"plnmNo\":1", capturedValue, StringComparison.Ordinal);
-        Assert.Contains("\"cltrNm\":\"test-item\"", capturedValue, StringComparison.Ordinal);
+        Assert.Contains("\"ctgrId\":\"001\"", capturedValue, StringComparison.Ordinal);
+        Assert.Contains("\"ctgrNm\":\"land\"", capturedValue, StringComparison.Ordinal);
+        Assert.Contains("\"ctgrHirkId\":\"000\"", capturedValue, StringComparison.Ordinal);
     }
 
-    private CollectKamcoAuctionsUseCase CreateUseCase()
+    private CollectCodeInfoUseCase CreateUseCase()
     {
-        return new CollectKamcoAuctionsUseCase(
+        return new CollectCodeInfoUseCase(
             _client,
             _publisher,
             Options.Create(_options),
-            NullLogger<CollectKamcoAuctionsUseCase>.Instance);
+            NullLogger<CollectCodeInfoUseCase>.Instance);
     }
 }
