@@ -2,6 +2,7 @@ using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Application.Models;
 using Hammer.Support.Domain.Models;
 using Hammer.Support.Infrastructure.Onbid;
+using Hammer.Support.Infrastructure.Onbid.Kamco;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;

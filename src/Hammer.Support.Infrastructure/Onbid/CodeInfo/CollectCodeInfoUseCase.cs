@@ -1,44 +1,43 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using Hammer.Support.Application;
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Application.Models;
 using Hammer.Support.Domain.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Hammer.Support.Infrastructure.Onbid;
+namespace Hammer.Support.Infrastructure.Onbid.CodeInfo;
 
 /// <summary>
-///     Fetches all KAMCO auction pages from Onbid and publishes each item to Kafka.
+///     Fetches all code information from Onbid and publishes each item to Kafka.
 ///     A process-level lock prevents concurrent execution from both scheduled and manual triggers.
 /// </summary>
 [SuppressMessage("Performance", "CA1873:Avoid potentially expensive logging", Justification = "Batch job, logging overhead negligible")]
-public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
+public sealed class CollectCodeInfoUseCase : ICollectCodeInfoUseCase
 {
-    private const string Topic = "onbid-kamco-auction";
-
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     private static readonly SemaphoreSlim _runLock = new(1, 1);
 
-    private readonly IKamcoApiClient _client;
-    private readonly ILogger<CollectKamcoAuctionsUseCase> _logger;
+    private readonly ICodeInfoApiClient _client;
+    private readonly ILogger<CollectCodeInfoUseCase> _logger;
     private readonly OnbidOptions _options;
     private readonly IEventPublisher _publisher;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="CollectKamcoAuctionsUseCase" /> class.
+    ///     Initializes a new instance of the <see cref="CollectCodeInfoUseCase" /> class.
     /// </summary>
-    /// <param name="client">Onbid API client.</param>
+    /// <param name="client">Onbid code info API client.</param>
     /// <param name="publisher">Kafka event publisher.</param>
     /// <param name="options">Onbid configuration options.</param>
     /// <param name="logger">Logger instance.</param>
-    public CollectKamcoAuctionsUseCase(
-        IKamcoApiClient client,
+    public CollectCodeInfoUseCase(
+        ICodeInfoApiClient client,
         IEventPublisher publisher,
         IOptions<OnbidOptions> options,
-        ILogger<CollectKamcoAuctionsUseCase> logger)
+        ILogger<CollectCodeInfoUseCase> logger)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -53,7 +52,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
     {
         if (!await _runLock.WaitAsync(0, cancellationToken))
         {
-            _logger.LogWarning("KAMCO collection already in progress, skipping");
+            _logger.LogWarning("Code info collection already in progress, skipping");
             return new CollectionResult { Skipped = true };
         }
 
@@ -69,7 +68,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
 
     private async Task<CollectionResult> RunCoreAsync(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting KAMCO auction collection");
+        _logger.LogInformation("Starting code info collection");
 
         var sw = Stopwatch.StartNew();
         var pageNo = 1;
@@ -81,7 +80,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                KamcoPageResult page = await _client.FetchPageAsync(pageNo, _options.PageSize, cancellationToken);
+                CodeInfoPageResult page = await _client.FetchPageAsync(pageNo, _options.PageSize, cancellationToken);
 
                 if (pageNo == 1)
                     totalCount = page.TotalCount;
@@ -89,12 +88,12 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
                 if (page.Items.Count == 0)
                     break;
 
-                foreach (KamcoAuctionItem item in page.Items)
+                foreach (OnbidCodeItem item in page.Items)
                 {
-                    var key = $"{item.PlnmNo}-{item.PbctNo}-{item.CltrNo}";
+                    var key = item.CtgrId;
                     var value = JsonSerializer.Serialize(item, _jsonOptions);
 
-                    await _publisher.PublishAsync(Topic, key, value, cancellationToken);
+                    await _publisher.PublishAsync(KafkaTopics.CodeInfo, key, value, cancellationToken);
                     totalProcessed++;
                 }
 
@@ -110,7 +109,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
                 }
 
                 _logger.LogInformation(
-                    "Published page {PageNo} ({Count} items, {Total}/{TotalCount} total)",
+                    "Published code info page {PageNo} ({Count} items, {Total}/{TotalCount} total)",
                     pageNo,
                     page.Items.Count,
                     totalProcessed,
@@ -129,7 +128,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
         {
             _logger.LogError(
                 ex,
-                "KAMCO collection failed at page {PageNo} after processing {Processed} items",
+                "Code info collection failed at page {PageNo} after processing {Processed} items",
                 pageNo,
                 totalProcessed);
         }
@@ -137,7 +136,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
         sw.Stop();
 
         _logger.LogInformation(
-            "KAMCO collection completed: {Delivered}/{TotalCount} items in {ElapsedMs}ms ({Pages} pages, {Failed} failed)",
+            "Code info collection completed: {Delivered}/{TotalCount} items in {ElapsedMs}ms ({Pages} pages, {Failed} failed)",
             totalProcessed - totalFailed,
             totalCount,
             sw.ElapsedMilliseconds,

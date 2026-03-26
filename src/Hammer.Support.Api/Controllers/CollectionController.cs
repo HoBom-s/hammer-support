@@ -35,4 +35,50 @@ public sealed class CollectionController : ControllerBase
             ? Conflict("Collection already in progress")
             : Ok(result);
     }
+
+    /// <summary>
+    ///     Triggers an institution auction data collection run.
+    ///     Returns 409 if a collection is already in progress.
+    /// </summary>
+    /// <param name="useCase">The collection use case.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>200 with <see cref="CollectionResult"/> on success, or 409 if already running.</returns>
+    [HttpPost("institution")]
+    [ProducesResponseType<CollectionResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CollectInstitutionAsync(
+        [FromServices] ICollectInstitutionAuctionsUseCase useCase,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(useCase);
+
+        CollectionResult result = await useCase.ExecuteAsync(cancellationToken);
+
+        return result.Skipped
+            ? Conflict("Collection already in progress")
+            : Ok(result);
+    }
+
+    /// <summary>
+    ///     Triggers a code information collection run.
+    ///     Returns 409 if a collection is already in progress.
+    /// </summary>
+    /// <param name="useCase">The collection use case.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>200 with <see cref="CollectionResult"/> on success, or 409 if already running.</returns>
+    [HttpPost("code-info")]
+    [ProducesResponseType<CollectionResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CollectCodeInfoAsync(
+        [FromServices] ICollectCodeInfoUseCase useCase,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(useCase);
+
+        CollectionResult result = await useCase.ExecuteAsync(cancellationToken);
+
+        return result.Skipped
+            ? Conflict("Collection already in progress")
+            : Ok(result);
+    }
 }
