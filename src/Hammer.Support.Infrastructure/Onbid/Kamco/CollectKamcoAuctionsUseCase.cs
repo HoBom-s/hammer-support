@@ -48,12 +48,12 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
     }
 
     /// <inheritdoc />
-    public async Task<CollectionResult> ExecuteAsync(CancellationToken cancellationToken = default)
+    public async Task<CollectionResult<KamcoAuctionItem>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         if (!await _runLock.WaitAsync(0, cancellationToken))
         {
             _logger.LogWarning("KAMCO collection already in progress, skipping");
-            return new CollectionResult { Skipped = true };
+            return new CollectionResult<KamcoAuctionItem> { Skipped = true };
         }
 
         try
@@ -66,7 +66,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
         }
     }
 
-    private async Task<CollectionResult> RunCoreAsync(CancellationToken cancellationToken)
+    private async Task<CollectionResult<KamcoAuctionItem>> RunCoreAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting KAMCO auction collection");
 
@@ -75,6 +75,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
         var totalProcessed = 0;
         var totalFailed = 0;
         var totalCount = 0;
+        List<KamcoAuctionItem> allItems = [];
 
         try
         {
@@ -94,6 +95,7 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
                     var value = JsonSerializer.Serialize(item, _jsonOptions);
 
                     await _publisher.PublishAsync(KafkaTopics.KamcoAuction, key, value, cancellationToken);
+                    allItems.Add(item);
                     totalProcessed++;
                 }
 
@@ -143,12 +145,13 @@ public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
             pageNo,
             totalFailed);
 
-        return new CollectionResult
+        return new CollectionResult<KamcoAuctionItem>
         {
             TotalCount = totalCount,
             Processed = totalProcessed,
             Failed = totalFailed,
             ElapsedMs = sw.ElapsedMilliseconds,
+            Items = allItems,
         };
     }
 }

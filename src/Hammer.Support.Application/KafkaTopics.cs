@@ -19,4 +19,9 @@ public static class KafkaTopics
     /// Onbid category code information.
     /// </summary>
     public const string CodeInfo = "onbid-code-info";
+
+    /// <summary>
+    /// Real estate market trade prices from MOLIT.
+    /// </summary>
+    public const string RealEstatePrice = "real-estate-market-price";
 }

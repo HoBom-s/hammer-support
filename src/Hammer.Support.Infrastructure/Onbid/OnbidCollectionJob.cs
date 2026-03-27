@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Hammer.Support.Application.Abstractions;
+using Hammer.Support.Application.Models;
+using Hammer.Support.Domain.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -83,13 +85,20 @@ public sealed class OnbidCollectionJob : BackgroundService
         _logger.LogInformation("Starting daily Onbid collection batch");
 
         ICollectKamcoAuctionsUseCase kamco = scope.ServiceProvider.GetRequiredService<ICollectKamcoAuctionsUseCase>();
-        await kamco.ExecuteAsync(stoppingToken);
+        CollectionResult<KamcoAuctionItem> kamcoResult = await kamco.ExecuteAsync(stoppingToken);
 
         ICollectInstitutionAuctionsUseCase institution = scope.ServiceProvider.GetRequiredService<ICollectInstitutionAuctionsUseCase>();
         await institution.ExecuteAsync(stoppingToken);
 
         ICollectCodeInfoUseCase codeInfo = scope.ServiceProvider.GetRequiredService<ICollectCodeInfoUseCase>();
         await codeInfo.ExecuteAsync(stoppingToken);
+
+        // Collect real estate trade prices for districts where KAMCO items are located.
+        if (!kamcoResult.Skipped && kamcoResult.Items.Count > 0)
+        {
+            ICollectRealEstatePriceUseCase realEstate = scope.ServiceProvider.GetRequiredService<ICollectRealEstatePriceUseCase>();
+            await realEstate.ExecuteAsync(kamcoResult.Items, stoppingToken);
+        }
 
         _logger.LogInformation("Daily Onbid collection batch completed");
     }

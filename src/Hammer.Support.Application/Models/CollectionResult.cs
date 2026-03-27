@@ -1,9 +1,9 @@
 namespace Hammer.Support.Application.Models;
 
 /// <summary>
-/// Result of a KAMCO auction collection run.
+/// Result of a collection run.
 /// </summary>
-public sealed record CollectionResult
+public record CollectionResult
 {
     /// <summary>Gets a value indicating whether the run was skipped because another is already in progress.</summary>
     public bool Skipped { get; init; }
