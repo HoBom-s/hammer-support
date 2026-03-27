@@ -15,6 +15,10 @@
     <InternalsVisibleTo Include="Hammer.Support.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Molit\Data\lawd_code.tsv" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

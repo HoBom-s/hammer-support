@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Application.Models;
+using Hammer.Support.Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hammer.Support.Api.Controllers;
@@ -79,6 +80,42 @@ public sealed class CollectionController : ControllerBase
 
         return result.Skipped
             ? Conflict("Collection already in progress")
+            : Ok(result);
+    }
+
+    /// <summary>
+    ///     Triggers a real estate market price collection run.
+    ///     First collects KAMCO items to determine which districts to query,
+    ///     then fetches trade data from the MOLIT API.
+    ///     Returns 409 if either collection is already in progress.
+    /// </summary>
+    /// <param name="kamcoUseCase">The KAMCO collection use case.</param>
+    /// <param name="realEstateUseCase">The real estate price collection use case.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>200 with <see cref="CollectionResult"/> on success, or 409 if already running.</returns>
+    [HttpPost("real-estate-price")]
+    [ProducesResponseType<CollectionResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CollectRealEstatePriceAsync(
+        [FromServices] ICollectKamcoAuctionsUseCase kamcoUseCase,
+        [FromServices] ICollectRealEstatePriceUseCase realEstateUseCase,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(kamcoUseCase);
+        ArgumentNullException.ThrowIfNull(realEstateUseCase);
+
+        CollectionResult<KamcoAuctionItem> kamcoResult = await kamcoUseCase.ExecuteAsync(cancellationToken);
+
+        if (kamcoResult.Skipped)
+            return Conflict("KAMCO collection already in progress");
+
+        if (kamcoResult.Items.Count == 0)
+            return Ok(new CollectionResult());
+
+        CollectionResult result = await realEstateUseCase.ExecuteAsync(kamcoResult.Items, cancellationToken);
+
+        return result.Skipped
+            ? Conflict("Real estate price collection already in progress")
             : Ok(result);
     }
 }

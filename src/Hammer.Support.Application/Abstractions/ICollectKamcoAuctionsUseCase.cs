@@ -1,4 +1,5 @@
 using Hammer.Support.Application.Models;
+using Hammer.Support.Domain.Models;
 
 namespace Hammer.Support.Application.Abstractions;
 
@@ -12,6 +13,6 @@ public interface ICollectKamcoAuctionsUseCase
     /// if another run is already in progress.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The collection result.</returns>
-    public Task<CollectionResult> ExecuteAsync(CancellationToken cancellationToken = default);
+    /// <returns>The collection result including collected items.</returns>
+    public Task<CollectionResult<KamcoAuctionItem>> ExecuteAsync(CancellationToken cancellationToken = default);
 }

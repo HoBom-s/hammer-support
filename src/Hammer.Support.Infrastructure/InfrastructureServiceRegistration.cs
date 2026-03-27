@@ -1,5 +1,6 @@
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Infrastructure.Kafka;
+using Hammer.Support.Infrastructure.Molit;
 using Hammer.Support.Infrastructure.Onbid;
 using Hammer.Support.Infrastructure.Onbid.CodeInfo;
 using Hammer.Support.Infrastructure.Onbid.Institution;
@@ -46,6 +47,15 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICollectInstitutionAuctionsUseCase, CollectInstitutionAuctionsUseCase>();
         services.AddScoped<ICollectCodeInfoUseCase, CollectCodeInfoUseCase>();
         services.AddHostedService<OnbidCollectionJob>();
+
+        // MOLIT (국토교통부 실거래가)
+        services.Configure<MolitOptions>(configuration.GetSection(MolitOptions.SectionName));
+        services.AddSingleton<ILawdCodeResolver, LawdCodeResolver>();
+        services.AddHttpClient<IRealEstateApiClient, RealEstateApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddScoped<ICollectRealEstatePriceUseCase, CollectRealEstatePriceUseCase>();
 
         return services;
     }
