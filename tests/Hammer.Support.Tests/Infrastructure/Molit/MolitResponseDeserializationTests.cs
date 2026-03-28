@@ -21,7 +21,7 @@ public sealed class MolitResponseDeserializationTests
             <?xml version="1.0" encoding="UTF-8"?>
             <response>
                 <header>
-                    <resultCode>00</resultCode>
+                    <resultCode>000</resultCode>
                     <resultMsg>NORMAL SERVICE.</resultMsg>
                 </header>
                 <body>
@@ -60,7 +60,7 @@ public sealed class MolitResponseDeserializationTests
 
         MolitResponse response = DeserializeXml(xml);
 
-        Assert.Equal("00", response.Header.ResultCode);
+        Assert.Equal("000", response.Header.ResultCode);
         Assert.Equal("NORMAL SERVICE.", response.Header.ResultMsg);
         Assert.Equal(2, response.Body.TotalCount);
         Assert.Equal(2, response.Body.Items.ItemList.Count);
@@ -86,7 +86,7 @@ public sealed class MolitResponseDeserializationTests
             <?xml version="1.0" encoding="UTF-8"?>
             <response>
                 <header>
-                    <resultCode>00</resultCode>
+                    <resultCode>000</resultCode>
                     <resultMsg>NORMAL SERVICE.</resultMsg>
                 </header>
                 <body>
@@ -125,7 +125,7 @@ public sealed class MolitResponseDeserializationTests
             <?xml version="1.0" encoding="UTF-8"?>
             <response>
                 <header>
-                    <resultCode>00</resultCode>
+                    <resultCode>000</resultCode>
                     <resultMsg>NORMAL SERVICE.</resultMsg>
                 </header>
                 <body>
@@ -186,7 +186,7 @@ public sealed class MolitResponseDeserializationTests
             <?xml version="1.0" encoding="UTF-8"?>
             <response>
                 <header>
-                    <resultCode>00</resultCode>
+                    <resultCode>000</resultCode>
                     <resultMsg>NORMAL SERVICE.</resultMsg>
                 </header>
                 <body>
@@ -198,7 +198,7 @@ public sealed class MolitResponseDeserializationTests
 
         MolitResponse response = DeserializeXml(xml);
 
-        Assert.Equal("00", response.Header.ResultCode);
+        Assert.Equal("000", response.Header.ResultCode);
         Assert.Equal(0, response.Body.TotalCount);
         Assert.Empty(response.Body.Items.ItemList);
     }

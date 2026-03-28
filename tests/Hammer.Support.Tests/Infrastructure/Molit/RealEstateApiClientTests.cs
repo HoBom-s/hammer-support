@@ -220,7 +220,7 @@ public sealed class RealEstateApiClientTests
             <?xml version="1.0" encoding="UTF-8"?>
             <response>
                 <header>
-                    <resultCode>00</resultCode>
+                    <resultCode>000</resultCode>
                     <resultMsg>NORMAL SERVICE.</resultMsg>
                 </header>
                 <body>
@@ -272,7 +272,7 @@ public sealed class RealEstateApiClientTests
             <?xml version="1.0" encoding="UTF-8"?>
             <response>
                 <header>
-                    <resultCode>00</resultCode>
+                    <resultCode>000</resultCode>
                     <resultMsg>NORMAL SERVICE.</resultMsg>
                 </header>
                 <body>
@@ -361,7 +361,7 @@ public sealed class RealEstateApiClientTests
             <?xml version="1.0" encoding="UTF-8"?>
             <response>
                 <header>
-                    <resultCode>00</resultCode>
+                    <resultCode>000</resultCode>
                     <resultMsg>NORMAL SERVICE.</resultMsg>
                 </header>
                 <body>
@@ -407,7 +407,7 @@ public sealed class RealEstateApiClientTests
             <?xml version="1.0" encoding="UTF-8"?>
             <response>
                 <header>
-                    <resultCode>00</resultCode>
+                    <resultCode>000</resultCode>
                     <resultMsg>NORMAL SERVICE.</resultMsg>
                 </header>
                 <body>

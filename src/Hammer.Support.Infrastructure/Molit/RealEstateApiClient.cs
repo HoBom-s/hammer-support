@@ -91,7 +91,7 @@ public sealed class RealEstateApiClient : IRealEstateApiClient
 
         var response = (MolitResponse?)_serializer.Deserialize(reader);
 
-        if (response is null || response.Header.ResultCode != "00")
+        if (response is null || response.Header.ResultCode != "000")
         {
             _logger.LogError(
                 "MOLIT API error for {PropertyType} LAWD_CD={LawdCd} DEAL_YMD={DealYmd}: {Code} {Msg}",
