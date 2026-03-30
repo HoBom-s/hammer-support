@@ -24,4 +24,9 @@ public static class KafkaTopics
     /// Real estate market trade prices from MOLIT.
     /// </summary>
     public const string RealEstatePrice = "real-estate-market-price";
+
+    /// <summary>
+    /// Incoming notification requests from other services.
+    /// </summary>
+    public const string NotificationRequest = "notification-request";
 }

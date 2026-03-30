@@ -1,10 +1,13 @@
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Infrastructure.Kafka;
 using Hammer.Support.Infrastructure.Molit;
+using Hammer.Support.Infrastructure.Notification;
 using Hammer.Support.Infrastructure.Onbid;
 using Hammer.Support.Infrastructure.Onbid.CodeInfo;
 using Hammer.Support.Infrastructure.Onbid.Institution;
 using Hammer.Support.Infrastructure.Onbid.Kamco;
+using Hammer.Support.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -56,6 +59,20 @@ public static class InfrastructureServiceRegistration
             client.Timeout = TimeSpan.FromSeconds(60);
         });
         services.AddScoped<ICollectRealEstatePriceUseCase, CollectRealEstatePriceUseCase>();
+
+        // PostgreSQL + EF Core
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+
+        // Notification
+        services.Configure<FcmOptions>(configuration.GetSection(FcmOptions.SectionName));
+        services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
+        services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
+        services.AddSingleton<INotificationSender, FcmSender>();
+        services.AddScoped<INotificationSender, InAppNotificationSender>();
+        services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
+        services.AddScoped<INotificationOrchestrator, NotificationOrchestrator>();
+        services.AddHostedService<NotificationConsumer>();
 
         return services;
     }

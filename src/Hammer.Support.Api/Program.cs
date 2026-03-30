@@ -1,5 +1,6 @@
 using Hammer.Support.Infrastructure;
 using Hammer.Support.Infrastructure.Configuration;
+using Hammer.Support.Infrastructure.Logging;
 using Scalar.AspNetCore;
 using Serilog;
 
@@ -14,8 +15,15 @@ EnvFileLoader.Load(envFile);
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+var kafkaBootstrapServers = builder.Configuration["Kafka:BootstrapServers"] ?? string.Empty;
+
 builder.Host.UseSerilog((context, configuration) =>
-    configuration.ReadFrom.Configuration(context.Configuration));
+{
+    configuration.ReadFrom.Configuration(context.Configuration);
+
+    if (!string.IsNullOrWhiteSpace(kafkaBootstrapServers))
+        configuration.WriteToKafkaErrors(kafkaBootstrapServers);
+});
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
