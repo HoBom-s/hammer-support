@@ -9,6 +9,7 @@ namespace Hammer.Support.Infrastructure.Persistence.Configurations;
 /// </summary>
 internal sealed class NotificationLogConfiguration : IEntityTypeConfiguration<NotificationLog>
 {
+    /// <inheritdoc />
     public void Configure(EntityTypeBuilder<NotificationLog> builder)
     {
         builder.ToTable("notification_logs");

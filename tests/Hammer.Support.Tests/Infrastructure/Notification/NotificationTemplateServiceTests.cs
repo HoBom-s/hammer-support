@@ -85,7 +85,10 @@ public sealed class NotificationTemplateServiceTests
 
         var command = new UpdateNotificationTemplateCommand
         {
-            TemplateKey = "k", TitleTemplate = "t", BodyTemplate = "b", Channel = NotificationChannel.Fcm,
+            TemplateKey = "k",
+            TitleTemplate = "t",
+            BodyTemplate = "b",
+            Channel = NotificationChannel.Fcm,
         };
         NotificationTemplate? result = await _sut.UpdateAsync(id, command);
 
@@ -99,7 +102,11 @@ public sealed class NotificationTemplateServiceTests
         var id = Guid.NewGuid();
         var existing = new NotificationTemplate
         {
-            Id = id, TemplateKey = "old", TitleTemplate = "Old", BodyTemplate = "Old", Channel = NotificationChannel.Fcm,
+            Id = id,
+            TemplateKey = "old",
+            TitleTemplate = "Old",
+            BodyTemplate = "Old",
+            Channel = NotificationChannel.Fcm,
         };
         _repo.GetByIdAsync(id, Arg.Any<CancellationToken>()).Returns(existing);
         _repo.UpdateAsync(Arg.Any<NotificationTemplate>(), Arg.Any<CancellationToken>())

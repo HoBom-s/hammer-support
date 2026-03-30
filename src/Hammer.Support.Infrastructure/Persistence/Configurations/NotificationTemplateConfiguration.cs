@@ -9,6 +9,7 @@ namespace Hammer.Support.Infrastructure.Persistence.Configurations;
 /// </summary>
 internal sealed class NotificationTemplateConfiguration : IEntityTypeConfiguration<NotificationTemplate>
 {
+    /// <inheritdoc />
     public void Configure(EntityTypeBuilder<NotificationTemplate> builder)
     {
         builder.ToTable("notification_templates");

@@ -35,7 +35,10 @@ internal sealed class NotificationTemplateService : INotificationTemplateService
 
         NotificationTemplate entity = new()
         {
-            TemplateKey = command.TemplateKey, TitleTemplate = command.TitleTemplate, BodyTemplate = command.BodyTemplate, Channel = command.Channel,
+            TemplateKey = command.TemplateKey,
+            TitleTemplate = command.TitleTemplate,
+            BodyTemplate = command.BodyTemplate,
+            Channel = command.Channel,
         };
 
         return await _repository.CreateAsync(entity, cancellationToken);

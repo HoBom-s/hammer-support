@@ -170,7 +170,10 @@ public sealed class CollectRealEstatePriceUseCase : ICollectRealEstatePriceUseCa
 
         return new CollectionResult
         {
-            TotalCount = totalProcessed, Processed = totalProcessed, Failed = totalFailed, ElapsedMs = sw.ElapsedMilliseconds,
+            TotalCount = totalProcessed,
+            Processed = totalProcessed,
+            Failed = totalFailed,
+            ElapsedMs = sw.ElapsedMilliseconds,
         };
     }
 

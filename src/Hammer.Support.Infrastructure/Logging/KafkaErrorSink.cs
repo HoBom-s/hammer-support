@@ -25,7 +25,10 @@ internal sealed class KafkaErrorSink : ILogEventSink, IDisposable
     {
         var config = new ProducerConfig
         {
-            BootstrapServers = bootstrapServers, Acks = Acks.Leader, LingerMs = 5, BatchNumMessages = 100,
+            BootstrapServers = bootstrapServers,
+            Acks = Acks.Leader,
+            LingerMs = 5,
+            BatchNumMessages = 100,
         };
 
         _producer = new ProducerBuilder<string, string>(config).Build();
