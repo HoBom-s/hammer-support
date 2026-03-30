@@ -28,6 +28,8 @@ internal sealed class NotificationLogConfiguration : IEntityTypeConfiguration<No
             .HasMaxLength(512)
             .IsRequired();
 
+        builder.HasIndex(l => l.RecipientToken);
+
         builder.Property(l => l.Channel)
             .HasColumnName("channel")
             .HasConversion<string>()

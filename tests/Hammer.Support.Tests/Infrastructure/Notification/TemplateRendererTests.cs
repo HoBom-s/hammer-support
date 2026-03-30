@@ -66,4 +66,40 @@ public sealed class TemplateRendererTests
 
         result.Should().Be("Value: ");
     }
+
+    [Fact]
+    public void RenderWithUnmatched_AllResolved_ReturnsEmptyList()
+    {
+        var template = "Hello {name}";
+        var variables = new Dictionary<string, string> { ["name"] = "Fox" };
+
+        TemplateRenderer.Render(template, variables, out IReadOnlyList<string> unmatched);
+
+        unmatched.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RenderWithUnmatched_MissingVariable_ReportsPlaceholder()
+    {
+        var template = "Hello {name}, {missing} here.";
+        var variables = new Dictionary<string, string> { ["name"] = "Fox" };
+
+        var result = TemplateRenderer.Render(template, variables, out IReadOnlyList<string> unmatched);
+
+        result.Should().Be("Hello Fox, {missing} here.");
+        unmatched.Should().ContainSingle().Which.Should().Be("missing");
+    }
+
+    [Fact]
+    public void RenderWithUnmatched_MultipleUnmatched_ReportsAll()
+    {
+        var template = "{a} and {b}";
+        var variables = new Dictionary<string, string>();
+
+        TemplateRenderer.Render(template, variables, out IReadOnlyList<string> unmatched);
+
+        unmatched.Should().HaveCount(2);
+        unmatched.Should().Contain("a");
+        unmatched.Should().Contain("b");
+    }
 }
