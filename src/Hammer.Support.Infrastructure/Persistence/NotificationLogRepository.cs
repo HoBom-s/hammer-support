@@ -1,5 +1,6 @@
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Hammer.Support.Infrastructure.Persistence;
 
@@ -27,5 +28,26 @@ internal sealed class NotificationLogRepository : INotificationLogRepository
 
         _db.NotificationLogs.Add(log);
         await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateAsync(NotificationLog log, CancellationToken cancellationToken = default)
+    {
+        _db.NotificationLogs.Update(log);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<NotificationLog>> GetByRecipientAsync(
+        string recipientToken,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        return await _db.NotificationLogs
+            .AsNoTracking()
+            .Where(l => l.RecipientToken == recipientToken)
+            .OrderByDescending(l => l.CreatedAt)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
     }
 }

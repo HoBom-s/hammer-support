@@ -50,7 +50,7 @@ public sealed class NotificationOrchestratorTests
     }
 
     [Fact]
-    public async Task ProcessAsync_FcmChannel_SendsAndLogsSuccess()
+    public async Task ProcessAsync_FcmChannel_SavesPendingThenUpdatesSent()
     {
         NotificationTemplate template = CreateTemplate(NotificationChannel.Fcm);
         _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
@@ -58,7 +58,14 @@ public sealed class NotificationOrchestratorTests
         await _sut.ProcessAsync(CreateRequest());
 
         await _fcmSender.Received(1).SendAsync("device-token-abc", "Hello Fox", "Welcome Fox!", Arg.Any<CancellationToken>());
+
+        // SaveAsync is called first with Pending status (before send)
         await _logRepo.Received(1).SaveAsync(
+            Arg.Is<NotificationLog>(l => l.Channel == NotificationChannel.Fcm),
+            Arg.Any<CancellationToken>());
+
+        // UpdateAsync is called after send with final Sent status
+        await _logRepo.Received(1).UpdateAsync(
             Arg.Is<NotificationLog>(l => l.Status == NotificationStatus.Sent && l.Channel == NotificationChannel.Fcm),
             Arg.Any<CancellationToken>());
     }
@@ -74,6 +81,7 @@ public sealed class NotificationOrchestratorTests
         await _fcmSender.Received(1).SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _inAppSender.Received(1).SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _logRepo.Received(2).SaveAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>());
+        await _logRepo.Received(2).UpdateAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -86,7 +94,11 @@ public sealed class NotificationOrchestratorTests
 
         await _sut.ProcessAsync(CreateRequest());
 
-        await _logRepo.Received(1).SaveAsync(
+        // SaveAsync called first with Pending
+        await _logRepo.Received(1).SaveAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>());
+
+        // UpdateAsync called with Failed status
+        await _logRepo.Received(1).UpdateAsync(
             Arg.Is<NotificationLog>(l => l.Status == NotificationStatus.Failed && l.ErrorMessage == "FCM unavailable"),
             Arg.Any<CancellationToken>());
     }
@@ -119,6 +131,56 @@ public sealed class NotificationOrchestratorTests
 
         await _inAppSender.DidNotReceive().SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         await _logRepo.DidNotReceive().SaveAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_SaveAsyncThrows_PropagatesException()
+    {
+        NotificationTemplate template = CreateTemplate(NotificationChannel.Fcm);
+        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        _logRepo.SaveAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("DB connection lost"));
+
+        Func<Task> act = () => _sut.ProcessAsync(CreateRequest());
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("DB connection lost");
+        await _fcmSender.DidNotReceive().SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_UpdateAsyncThrows_DoesNotCrash()
+    {
+        NotificationTemplate template = CreateTemplate(NotificationChannel.Fcm);
+        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        _logRepo.UpdateAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("DB timeout"));
+
+        Func<Task> act = () => _sut.ProcessAsync(CreateRequest());
+
+        await act.Should().NotThrowAsync();
+        await _fcmSender.Received(1).SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_SaveCalledBeforeSend()
+    {
+        NotificationTemplate template = CreateTemplate(NotificationChannel.Fcm);
+        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+
+        var callOrder = new List<string>();
+        _logRepo.SaveAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask)
+            .AndDoes(_ => callOrder.Add("Save"));
+        _fcmSender.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask)
+            .AndDoes(_ => callOrder.Add("Send"));
+        _logRepo.UpdateAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask)
+            .AndDoes(_ => callOrder.Add("Update"));
+
+        await _sut.ProcessAsync(CreateRequest());
+
+        callOrder.Should().ContainInOrder("Save", "Send", "Update");
     }
 
     private static NotificationRequest CreateRequest(string templateKey = "test_key", string token = "device-token-abc") =>

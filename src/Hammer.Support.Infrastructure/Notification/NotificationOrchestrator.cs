@@ -49,8 +49,14 @@ internal sealed class NotificationOrchestrator : INotificationOrchestrator
             return;
         }
 
-        var title = TemplateRenderer.Render(notificationTemplate.TitleTemplate, request.Variables);
-        var body = TemplateRenderer.Render(notificationTemplate.BodyTemplate, request.Variables);
+        var title = TemplateRenderer.Render(notificationTemplate.TitleTemplate, request.Variables, out IReadOnlyList<string> titleUnmatched);
+        var body = TemplateRenderer.Render(notificationTemplate.BodyTemplate, request.Variables, out IReadOnlyList<string> bodyUnmatched);
+
+        if (titleUnmatched.Count > 0 || bodyUnmatched.Count > 0)
+        {
+            var all = titleUnmatched.Concat(bodyUnmatched).Distinct().ToList();
+            _logger.LogWarning("Unmatched placeholders for template {TemplateKey}: {Placeholders}", request.TemplateKey, string.Join(", ", all));
+        }
 
         IReadOnlyList<NotificationChannel> channels = notificationTemplate.Channel.Resolve();
 
@@ -76,6 +82,9 @@ internal sealed class NotificationOrchestrator : INotificationOrchestrator
     {
         var log = NotificationLog.CreateLog(templateId, recipientToken, title, body, sender.Channel);
 
+        // Persist Pending log first — ensures audit trail even if send or update fails.
+        await _logRepo.SaveAsync(log, ct);
+
         try
         {
             await sender.SendAsync(recipientToken, title, body, ct);
@@ -89,6 +98,15 @@ internal sealed class NotificationOrchestrator : INotificationOrchestrator
             log.ChangeNotificationStatusToFailed(ex.Message);
         }
 
-        await _logRepo.SaveAsync(log, ct);
+        try
+        {
+            await _logRepo.UpdateAsync(log, ct);
+        }
+#pragma warning disable CA1031
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            _logger.LogError(ex, "Failed to update notification log {LogId} to {Status}", log.Id, log.Status);
+        }
     }
 }

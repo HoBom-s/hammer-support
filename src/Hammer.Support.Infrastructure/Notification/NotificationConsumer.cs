@@ -43,6 +43,16 @@ public sealed class NotificationConsumer : BackgroundService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Validates that a notification request has required fields.
+    /// </summary>
+    /// <param name="request">The request to validate.</param>
+    /// <returns>True if the request is valid; otherwise, false.</returns>
+    internal static bool IsValidRequest(NotificationRequest? request) =>
+        request is not null
+        && !string.IsNullOrWhiteSpace(request.TemplateKey)
+        && !string.IsNullOrWhiteSpace(request.RecipientToken);
+
     /// <inheritdoc/>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -54,7 +64,7 @@ public sealed class NotificationConsumer : BackgroundService
             BootstrapServers = _kafkaOptions.BootstrapServers,
             GroupId = _kafkaOptions.ConsumerGroupId,
             AutoOffsetReset = AutoOffsetReset.Earliest,
-            EnableAutoCommit = true,
+            EnableAutoCommit = false,
         };
 
         using IConsumer<string, string> consumer = new ConsumerBuilder<string, string>(config).Build();
@@ -73,7 +83,7 @@ public sealed class NotificationConsumer : BackgroundService
                 if (result?.Message?.Value is null)
                     continue;
 
-                await ProcessMessageAsync(result.Message.Value, stoppingToken);
+                await ProcessMessageAsync(consumer, result, stoppingToken);
             }
             catch (ConsumeException ex)
             {
@@ -84,29 +94,33 @@ public sealed class NotificationConsumer : BackgroundService
         consumer.Close();
     }
 
-    private async Task ProcessMessageAsync(string messageValue, CancellationToken ct)
+    private async Task ProcessMessageAsync(IConsumer<string, string> consumer, ConsumeResult<string, string> result, CancellationToken ct)
     {
         NotificationRequest? request;
         try
         {
-            request = JsonSerializer.Deserialize<NotificationRequest>(messageValue, _jsonOptions);
+            request = JsonSerializer.Deserialize<NotificationRequest>(result.Message.Value, _jsonOptions);
         }
 #pragma warning disable CA1031
         catch (JsonException ex)
 #pragma warning restore CA1031
         {
-            _logger.LogError(ex, "Failed to deserialize notification request: {Message}", messageValue[..Math.Min(messageValue.Length, 200)]);
+            _logger.LogError(ex, "Failed to deserialize notification request: {Message}", result.Message.Value[..Math.Min(result.Message.Value.Length, 200)]);
+            consumer.Commit(result);
             return;
         }
 
-        if (request is null)
+        if (!IsValidRequest(request))
         {
-            _logger.LogWarning("Deserialized notification request is null");
+            _logger.LogWarning("Invalid notification request — missing TemplateKey or RecipientToken");
+            consumer.Commit(result);
             return;
         }
 
         await using AsyncServiceScope scope = _scopeFactory.CreateAsyncScope();
         INotificationOrchestrator orchestrator = scope.ServiceProvider.GetRequiredService<INotificationOrchestrator>();
-        await orchestrator.ProcessAsync(request, ct);
+        await orchestrator.ProcessAsync(request!, ct);
+
+        consumer.Commit(result);
     }
 }
