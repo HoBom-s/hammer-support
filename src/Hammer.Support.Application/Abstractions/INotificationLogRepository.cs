@@ -24,11 +24,14 @@ public interface INotificationLogRepository
     public Task UpdateAsync(NotificationLog log, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves notification logs for a specific recipient, ordered by most recent first.
+    /// Retrieves notification logs for a specific recipient.
+    /// When <paramref name="sinceId"/> is null, returns the most recent logs in descending order.
+    /// When <paramref name="sinceId"/> is provided, returns logs created after that ID in ascending order.
     /// </summary>
     /// <param name="recipientToken">The recipient token to filter by.</param>
     /// <param name="limit">Maximum number of results to return.</param>
+    /// <param name="sinceId">Optional cursor — only return logs created after this log ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A list of notification logs for the given recipient.</returns>
-    public Task<IReadOnlyList<NotificationLog>> GetByRecipientAsync(string recipientToken, int limit, CancellationToken cancellationToken = default);
+    public Task<IReadOnlyList<NotificationLog>> GetByRecipientAsync(string recipientToken, int limit, Guid? sinceId, CancellationToken cancellationToken = default);
 }

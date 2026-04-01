@@ -35,7 +35,7 @@ public sealed class NotificationLogControllerTests
         {
             NotificationLog.CreateLog(Guid.NewGuid(), "token-abc", "Title", "Body", NotificationChannel.InApp),
         };
-        _repo.GetByRecipientAsync("token-abc", 20, Arg.Any<CancellationToken>()).Returns(logs);
+        _repo.GetByRecipientAsync("token-abc", 20, null, Arg.Any<CancellationToken>()).Returns(logs);
 
         IActionResult result = await _sut.GetByRecipientAsync("token-abc", cancellationToken: CancellationToken.None);
 
@@ -46,29 +46,41 @@ public sealed class NotificationLogControllerTests
     [Fact]
     public async Task GetByRecipientAsync_LimitExceeds100_ClampedTo100()
     {
-        _repo.GetByRecipientAsync("token", 100, Arg.Any<CancellationToken>())
+        _repo.GetByRecipientAsync("token", 100, null, Arg.Any<CancellationToken>())
             .Returns(new List<NotificationLog>());
 
         await _sut.GetByRecipientAsync("token", limit: 999, cancellationToken: CancellationToken.None);
 
-        await _repo.Received(1).GetByRecipientAsync("token", 100, Arg.Any<CancellationToken>());
+        await _repo.Received(1).GetByRecipientAsync("token", 100, null, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task GetByRecipientAsync_LimitBelowOne_ClampedToOne()
     {
-        _repo.GetByRecipientAsync("token", 1, Arg.Any<CancellationToken>())
+        _repo.GetByRecipientAsync("token", 1, null, Arg.Any<CancellationToken>())
             .Returns(new List<NotificationLog>());
 
         await _sut.GetByRecipientAsync("token", limit: -5, cancellationToken: CancellationToken.None);
 
-        await _repo.Received(1).GetByRecipientAsync("token", 1, Arg.Any<CancellationToken>());
+        await _repo.Received(1).GetByRecipientAsync("token", 1, null, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetByRecipientAsync_WithSinceId_PassesSinceIdToRepository()
+    {
+        var sinceId = Guid.NewGuid();
+        _repo.GetByRecipientAsync("token", 20, sinceId, Arg.Any<CancellationToken>())
+            .Returns(new List<NotificationLog>());
+
+        await _sut.GetByRecipientAsync("token", sinceId: sinceId, cancellationToken: CancellationToken.None);
+
+        await _repo.Received(1).GetByRecipientAsync("token", 20, sinceId, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task GetByRecipientAsync_NoLogs_ReturnsEmptyOk()
     {
-        _repo.GetByRecipientAsync("unknown", 20, Arg.Any<CancellationToken>())
+        _repo.GetByRecipientAsync("unknown", 20, null, Arg.Any<CancellationToken>())
             .Returns(new List<NotificationLog>());
 
         IActionResult result = await _sut.GetByRecipientAsync("unknown", cancellationToken: CancellationToken.None);
