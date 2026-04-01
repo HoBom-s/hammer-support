@@ -88,7 +88,7 @@ public sealed class NotificationTemplateServiceTests
             TemplateKey = "k",
             TitleTemplate = "t",
             BodyTemplate = "b",
-            Channel = NotificationChannel.Fcm,
+            Channel = NotificationChannel.Push,
         };
         NotificationTemplate? result = await _sut.UpdateAsync(id, command);
 
@@ -106,7 +106,7 @@ public sealed class NotificationTemplateServiceTests
             TemplateKey = "old",
             TitleTemplate = "Old",
             BodyTemplate = "Old",
-            Channel = NotificationChannel.Fcm,
+            Channel = NotificationChannel.Push,
         };
         _repo.GetByIdAsync(id, Arg.Any<CancellationToken>()).Returns(existing);
         _repo.UpdateAsync(Arg.Any<NotificationTemplate>(), Arg.Any<CancellationToken>())

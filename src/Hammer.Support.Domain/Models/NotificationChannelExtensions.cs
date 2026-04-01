@@ -7,7 +7,7 @@ public static class NotificationChannelExtensions
 {
     /// <summary>
     ///     Resolves a channel into individual delivery channels.
-    ///     <see cref="NotificationChannel.Both"/> is expanded to Fcm + InApp.
+    ///     <see cref="NotificationChannel.Both"/> is expanded to Push + InApp.
     /// </summary>
     /// <param name="channel">Notification channel.</param>
     /// <returns>Individual channels to deliver on.</returns>
@@ -15,7 +15,7 @@ public static class NotificationChannelExtensions
     {
         return channel switch
         {
-            NotificationChannel.Both => [NotificationChannel.Fcm, NotificationChannel.InApp],
+            NotificationChannel.Both => [NotificationChannel.Push, NotificationChannel.InApp],
             _ => [channel],
         };
     }
