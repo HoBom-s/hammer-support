@@ -5,12 +5,12 @@ namespace Hammer.Support.Domain.Models;
 /// </summary>
 public enum NotificationChannel
 {
-    /// <summary>Firebase Cloud Messaging push notification.</summary>
-    Fcm,
+    /// <summary>Push notification via Expo Push API.</summary>
+    Push,
 
     /// <summary>In-app notification stored in the database.</summary>
     InApp,
 
-    /// <summary>Both FCM push and in-app notification.</summary>
+    /// <summary>Both push and in-app notification.</summary>
     Both,
 }

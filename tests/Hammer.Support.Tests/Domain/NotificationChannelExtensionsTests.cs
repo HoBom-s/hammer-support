@@ -6,11 +6,11 @@ namespace Hammer.Support.Tests.Domain;
 public sealed class NotificationChannelExtensionsTests
 {
     [Fact]
-    public void Resolve_Fcm_ReturnsSingleFcm()
+    public void Resolve_Push_ReturnsSinglePush()
     {
-        IReadOnlyList<NotificationChannel> result = NotificationChannel.Fcm.Resolve();
+        IReadOnlyList<NotificationChannel> result = NotificationChannel.Push.Resolve();
 
-        result.Should().ContainSingle().Which.Should().Be(NotificationChannel.Fcm);
+        result.Should().ContainSingle().Which.Should().Be(NotificationChannel.Push);
     }
 
     [Fact]
@@ -22,11 +22,11 @@ public sealed class NotificationChannelExtensionsTests
     }
 
     [Fact]
-    public void Resolve_Both_ReturnsFcmAndInApp()
+    public void Resolve_Both_ReturnsPushAndInApp()
     {
         IReadOnlyList<NotificationChannel> result = NotificationChannel.Both.Resolve();
 
         result.Should().HaveCount(2);
-        result.Should().ContainInOrder(NotificationChannel.Fcm, NotificationChannel.InApp);
+        result.Should().ContainInOrder(NotificationChannel.Push, NotificationChannel.InApp);
     }
 }

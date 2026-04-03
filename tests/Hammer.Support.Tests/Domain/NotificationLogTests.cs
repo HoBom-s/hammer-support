@@ -10,13 +10,13 @@ public sealed class NotificationLogTests
     {
         var templateId = Guid.NewGuid();
 
-        var log = NotificationLog.CreateLog(templateId, "token-123", "Title", "Body", NotificationChannel.Fcm);
+        var log = NotificationLog.CreateLog(templateId, "token-123", "Title", "Body", NotificationChannel.Push);
 
         log.TemplateId.Should().Be(templateId);
         log.RecipientToken.Should().Be("token-123");
         log.Title.Should().Be("Title");
         log.Body.Should().Be("Body");
-        log.Channel.Should().Be(NotificationChannel.Fcm);
+        log.Channel.Should().Be(NotificationChannel.Push);
         log.Status.Should().Be(NotificationStatus.Pending);
         log.ErrorMessage.Should().BeNull();
     }
@@ -34,7 +34,7 @@ public sealed class NotificationLogTests
     [Fact]
     public void ChangeNotificationStatusToFailed_SetsStatusAndErrorMessage()
     {
-        var log = NotificationLog.CreateLog(Guid.NewGuid(), "t", "T", "B", NotificationChannel.Fcm);
+        var log = NotificationLog.CreateLog(Guid.NewGuid(), "t", "T", "B", NotificationChannel.Push);
 
         log.ChangeNotificationStatusToFailed("connection timeout");
 

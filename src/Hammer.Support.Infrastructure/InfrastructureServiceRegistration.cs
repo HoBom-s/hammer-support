@@ -65,10 +65,10 @@ public static class InfrastructureServiceRegistration
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
         // Notification
-        services.Configure<FcmOptions>(configuration.GetSection(FcmOptions.SectionName));
         services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
         services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
-        services.AddSingleton<INotificationSender, FcmSender>();
+        services.AddHttpClient<ExpoPushSender>();
+        services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<ExpoPushSender>());
         services.AddScoped<INotificationSender, InAppNotificationSender>();
         services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
         services.AddScoped<INotificationOrchestrator, NotificationOrchestrator>();

@@ -29,6 +29,7 @@ public sealed class NotificationLogController : ControllerBase
     /// </summary>
     /// <param name="recipientToken">The recipient token to filter by.</param>
     /// <param name="limit">Maximum number of results (default 20, max 100).</param>
+    /// <param name="sinceId">Optional cursor — only return logs created after this log ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the list of notification logs.</returns>
     [HttpGet]
@@ -37,6 +38,7 @@ public sealed class NotificationLogController : ControllerBase
     public async Task<IActionResult> GetByRecipientAsync(
         [FromQuery] string recipientToken,
         [FromQuery] int limit = 20,
+        [FromQuery] Guid? sinceId = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(recipientToken))
@@ -44,7 +46,7 @@ public sealed class NotificationLogController : ControllerBase
 
         limit = Math.Clamp(limit, 1, 100);
 
-        IReadOnlyList<NotificationLog> logs = await _repository.GetByRecipientAsync(recipientToken, limit, cancellationToken);
+        IReadOnlyList<NotificationLog> logs = await _repository.GetByRecipientAsync(recipientToken, limit, sinceId, cancellationToken);
         return Ok(logs);
     }
 }

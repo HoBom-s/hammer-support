@@ -41,12 +41,33 @@ internal sealed class NotificationLogRepository : INotificationLogRepository
     public async Task<IReadOnlyList<NotificationLog>> GetByRecipientAsync(
         string recipientToken,
         int limit,
+        Guid? sinceId,
         CancellationToken cancellationToken = default)
     {
+        if (sinceId is null)
+        {
+            return await _db.NotificationLogs
+                .AsNoTracking()
+                .Where(l => l.RecipientToken == recipientToken)
+                .OrderByDescending(l => l.CreatedAt)
+                .Take(limit)
+                .ToListAsync(cancellationToken);
+        }
+
+        DateTimeOffset? maybeSinceCreatedAt = await _db.NotificationLogs
+            .Where(l => l.Id == sinceId.Value)
+            .Select(l => (DateTimeOffset?)l.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (maybeSinceCreatedAt is null)
+            return Array.Empty<NotificationLog>();
+
+        DateTimeOffset sinceCreatedAt = maybeSinceCreatedAt.Value;
+
         return await _db.NotificationLogs
             .AsNoTracking()
-            .Where(l => l.RecipientToken == recipientToken)
-            .OrderByDescending(l => l.CreatedAt)
+            .Where(l => l.RecipientToken == recipientToken && l.CreatedAt > sinceCreatedAt)
+            .OrderBy(l => l.CreatedAt)
             .Take(limit)
             .ToListAsync(cancellationToken);
     }
