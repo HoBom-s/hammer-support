@@ -1,6 +1,8 @@
 using Hammer.Support.Infrastructure;
 using Hammer.Support.Infrastructure.Configuration;
 using Hammer.Support.Infrastructure.Logging;
+using Hammer.Support.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
 
@@ -31,6 +33,12 @@ builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 
 WebApplication app = builder.Build();
+
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 if (!app.Environment.IsProduction())
 {
