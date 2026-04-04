@@ -1,6 +1,13 @@
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Infrastructure.Kafka;
+using Hammer.Support.Infrastructure.Molit;
+using Hammer.Support.Infrastructure.Notification;
 using Hammer.Support.Infrastructure.Onbid;
+using Hammer.Support.Infrastructure.Onbid.CodeInfo;
+using Hammer.Support.Infrastructure.Onbid.Institution;
+using Hammer.Support.Infrastructure.Onbid.Kamco;
+using Hammer.Support.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,8 +34,46 @@ public static class InfrastructureServiceRegistration
 
         // Onbid
         services.Configure<OnbidOptions>(configuration.GetSection(OnbidOptions.SectionName));
-        services.AddHttpClient<IKamcoApiClient, KamcoApiClient>();
-        services.AddHostedService<KamcoCollectionJob>();
+        services.AddHttpClient<IKamcoApiClient, KamcoApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddHttpClient<IInstitutionApiClient, InstitutionApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddHttpClient<ICodeInfoApiClient, CodeInfoApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddScoped<ICollectKamcoAuctionsUseCase, CollectKamcoAuctionsUseCase>();
+        services.AddScoped<ICollectInstitutionAuctionsUseCase, CollectInstitutionAuctionsUseCase>();
+        services.AddScoped<ICollectCodeInfoUseCase, CollectCodeInfoUseCase>();
+        services.AddHostedService<OnbidCollectionJob>();
+
+        // MOLIT (국토교통부 실거래가)
+        services.Configure<MolitOptions>(configuration.GetSection(MolitOptions.SectionName));
+        services.AddSingleton<ILawdCodeResolver, LawdCodeResolver>();
+        services.AddHttpClient<IRealEstateApiClient, RealEstateApiClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddScoped<ICollectRealEstatePriceUseCase, CollectRealEstatePriceUseCase>();
+
+        // PostgreSQL + EF Core
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
+                .UseSnakeCaseNamingConvention());
+
+        // Notification
+        services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
+        services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
+        services.AddHttpClient<ExpoPushSender>();
+        services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<ExpoPushSender>());
+        services.AddScoped<INotificationSender, InAppNotificationSender>();
+        services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
+        services.AddScoped<INotificationOrchestrator, NotificationOrchestrator>();
+        services.AddHostedService<NotificationConsumer>();
 
         return services;
     }

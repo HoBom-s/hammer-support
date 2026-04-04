@@ -1,96 +1,64 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using Hammer.Support.Application;
 using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Application.Models;
 using Hammer.Support.Domain.Models;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Hammer.Support.Infrastructure.Onbid;
+namespace Hammer.Support.Infrastructure.Onbid.Kamco;
 
 /// <summary>
-///     Background service that collects KAMCO auction items daily at 9 AM KST.
-///     For multi-pod deployments, ensure only one replica runs this job
-///     or introduce a distributed lock (e.g. Redis) to prevent duplicate execution.
+///     Fetches all KAMCO auction pages from Onbid and publishes each item to Kafka.
+///     A process-level lock prevents concurrent execution from both scheduled and manual triggers.
 /// </summary>
-[SuppressMessage("Performance", "CA1873:Avoid potentially expensive logging", Justification = "Daily batch job, logging overhead negligible")]
-public sealed class KamcoCollectionJob : BackgroundService
+[SuppressMessage("Performance", "CA1873:Avoid potentially expensive logging", Justification = "Batch job, logging overhead negligible")]
+public sealed class CollectKamcoAuctionsUseCase : ICollectKamcoAuctionsUseCase
 {
-    private const string Topic = "onbid-kamco-auction";
-
-    private static readonly TimeZoneInfo _kst = TimeZoneInfo.FindSystemTimeZoneById("Asia/Seoul");
-
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     private static readonly SemaphoreSlim _runLock = new(1, 1);
 
-    private readonly ILogger<KamcoCollectionJob> _logger;
+    private readonly IKamcoApiClient _client;
+    private readonly ILogger<CollectKamcoAuctionsUseCase> _logger;
     private readonly OnbidOptions _options;
     private readonly IEventPublisher _publisher;
-    private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="KamcoCollectionJob" /> class.
+    ///     Initializes a new instance of the <see cref="CollectKamcoAuctionsUseCase" /> class.
     /// </summary>
-    /// <param name="scopeFactory">Service scope factory for resolving scoped dependencies.</param>
+    /// <param name="client">Onbid API client.</param>
     /// <param name="publisher">Kafka event publisher.</param>
     /// <param name="options">Onbid configuration options.</param>
     /// <param name="logger">Logger instance.</param>
-    public KamcoCollectionJob(
-        IServiceScopeFactory scopeFactory,
+    public CollectKamcoAuctionsUseCase(
+        IKamcoApiClient client,
         IEventPublisher publisher,
         IOptions<OnbidOptions> options,
-        ILogger<KamcoCollectionJob> logger)
+        ILogger<CollectKamcoAuctionsUseCase> logger)
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        _scopeFactory = scopeFactory;
+        _client = client;
         _publisher = publisher;
         _options = options.Value;
         _logger = logger;
     }
 
-    /// <summary>
-    ///     Calculates the delay from now until the next run at <paramref name="targetHour"/> KST.
-    /// </summary>
-    /// <param name="targetHour">Hour of day (0-23) in KST to schedule the next run.</param>
-    /// <returns>Time remaining until the next scheduled run.</returns>
-    internal static TimeSpan CalculateDelayUntilNextRun(int targetHour)
-    {
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        DateTimeOffset nowKst = TimeZoneInfo.ConvertTime(now, _kst);
-
-        DateTime targetDate = nowKst.Date;
-        if (nowKst.TimeOfDay >= new TimeSpan(targetHour, 0, 0))
-            targetDate = targetDate.AddDays(1);
-
-        DateTime targetLocal = targetDate.Add(new TimeSpan(targetHour, 0, 0));
-        TimeSpan targetOffset = _kst.GetUtcOffset(targetLocal);
-        DateTimeOffset targetKst = new(targetLocal, targetOffset);
-
-        return targetKst - now;
-    }
-
-    /// <summary>
-    ///     Fetches all KAMCO auction pages and publishes each item to Kafka.
-    ///     Acquires a process-level lock to prevent concurrent execution.
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    internal async Task RunCollectionAsync(CancellationToken cancellationToken)
+    /// <inheritdoc />
+    public async Task<CollectionResult<KamcoAuctionItem>> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         if (!await _runLock.WaitAsync(0, cancellationToken))
         {
             _logger.LogWarning("KAMCO collection already in progress, skipping");
-            return;
+            return new CollectionResult<KamcoAuctionItem> { Skipped = true };
         }
 
         try
         {
-            await RunCollectionCoreAsync(cancellationToken);
+            return await RunCoreAsync(cancellationToken);
         }
         finally
         {
@@ -98,37 +66,22 @@ public sealed class KamcoCollectionJob : BackgroundService
         }
     }
 
-    /// <inheritdoc />
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            TimeSpan delay = CalculateDelayUntilNextRun(_options.CollectionHour);
-            _logger.LogInformation("Next KAMCO collection run in {Delay}", delay);
-
-            await Task.Delay(delay, stoppingToken);
-            await RunCollectionAsync(stoppingToken);
-        }
-    }
-
-    private async Task RunCollectionCoreAsync(CancellationToken cancellationToken)
+    private async Task<CollectionResult<KamcoAuctionItem>> RunCoreAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting KAMCO auction collection");
-
-        await using AsyncServiceScope scope = _scopeFactory.CreateAsyncScope();
-        IKamcoApiClient client = scope.ServiceProvider.GetRequiredService<IKamcoApiClient>();
 
         var sw = Stopwatch.StartNew();
         var pageNo = 1;
         var totalProcessed = 0;
         var totalFailed = 0;
         var totalCount = 0;
+        List<KamcoAuctionItem> allItems = [];
 
         try
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                KamcoPageResult page = await client.FetchPageAsync(pageNo, _options.PageSize, cancellationToken);
+                KamcoPageResult page = await _client.FetchPageAsync(pageNo, _options.PageSize, cancellationToken);
 
                 if (pageNo == 1)
                     totalCount = page.TotalCount;
@@ -141,7 +94,8 @@ public sealed class KamcoCollectionJob : BackgroundService
                     var key = $"{item.PlnmNo}-{item.PbctNo}-{item.CltrNo}";
                     var value = JsonSerializer.Serialize(item, _jsonOptions);
 
-                    await _publisher.PublishAsync(Topic, key, value, cancellationToken);
+                    await _publisher.PublishAsync(KafkaTopics.KamcoAuction, key, value, cancellationToken);
+                    allItems.Add(item);
                     totalProcessed++;
                 }
 
@@ -167,6 +121,7 @@ public sealed class KamcoCollectionJob : BackgroundService
                     break;
 
                 pageNo++;
+                await Task.Delay(200, cancellationToken);
             }
         }
 #pragma warning disable CA1031
@@ -181,6 +136,7 @@ public sealed class KamcoCollectionJob : BackgroundService
         }
 
         sw.Stop();
+
         _logger.LogInformation(
             "KAMCO collection completed: {Delivered}/{TotalCount} items in {ElapsedMs}ms ({Pages} pages, {Failed} failed)",
             totalProcessed - totalFailed,
@@ -188,5 +144,14 @@ public sealed class KamcoCollectionJob : BackgroundService
             sw.ElapsedMilliseconds,
             pageNo,
             totalFailed);
+
+        return new CollectionResult<KamcoAuctionItem>
+        {
+            TotalCount = totalCount,
+            Processed = totalProcessed,
+            Failed = totalFailed,
+            ElapsedMs = sw.ElapsedMilliseconds,
+            Items = allItems,
+        };
     }
 }
