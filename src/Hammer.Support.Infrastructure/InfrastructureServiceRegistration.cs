@@ -62,7 +62,8 @@ public static class InfrastructureServiceRegistration
 
         // PostgreSQL + EF Core
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
+                .UseSnakeCaseNamingConvention());
 
         // Notification
         services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
