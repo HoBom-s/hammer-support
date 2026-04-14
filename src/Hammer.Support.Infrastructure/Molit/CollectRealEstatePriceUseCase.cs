@@ -154,7 +154,7 @@ public sealed class CollectRealEstatePriceUseCase : ICollectRealEstatePriceUseCa
                 totalProcessed += counts.Processed;
                 totalFailed += counts.Failed;
 
-                await Task.Delay(200, cancellationToken);
+                await Task.Delay(_options.RequestDelayMs, cancellationToken);
             }
         }
 
@@ -218,7 +218,7 @@ public sealed class CollectRealEstatePriceUseCase : ICollectRealEstatePriceUseCa
                     break;
 
                 pageNo++;
-                await Task.Delay(200, cancellationToken);
+                await Task.Delay(_options.RequestDelayMs, cancellationToken);
             }
         }
 #pragma warning disable CA1031

@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using Hammer.Support.Application.Models;
 using Hammer.Support.Domain.Models;
@@ -446,6 +447,85 @@ public sealed class RealEstateApiClientTests
         Assert.Null(trade.Floor);
     }
 
+    [Fact]
+    public async Task FetchPageAsync_RateLimited_RetriesAndSucceeds()
+    {
+        const string xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <response>
+                <header><resultCode>000</resultCode><resultMsg>OK</resultMsg></header>
+                <body>
+                    <totalCount>1</totalCount>
+                    <items>
+                        <item>
+                            <sggCd>11680</sggCd>
+                            <umdNm>역삼동</umdNm>
+                            <jibun>1</jibun>
+                            <dealAmount>50,000</dealAmount>
+                            <dealYear>2026</dealYear>
+                            <dealMonth>1</dealMonth>
+                            <dealDay>10</dealDay>
+                            <dealArea>100.0</dealArea>
+                        </item>
+                    </items>
+                </body>
+            </response>
+            """;
+
+        HttpResponseMessage rateLimited = new(HttpStatusCode.TooManyRequests);
+        rateLimited.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.Zero);
+
+        HttpResponseMessage ok = new(HttpStatusCode.OK)
+        {
+            Content = new StringContent(xml, Encoding.UTF8, "application/xml"),
+        };
+
+        SequentialHttpHandler handler = new(rateLimited, ok);
+        HttpClient httpClient = new(handler);
+        MolitOptions options = new()
+        {
+            ServiceKey = "test-key",
+            BaseUrl = "http://localhost",
+            PageSize = 100,
+            MaxRetries = 3,
+        };
+
+        RealEstateApiClient client = new(
+            httpClient, Options.Create(options), NullLogger<RealEstateApiClient>.Instance);
+
+        RealEstatePageResult result = await client.FetchPageAsync(
+            PropertyType.Land, "11680", "202601", 1, 100);
+
+        Assert.Equal(1, result.TotalCount);
+        Assert.Single(result.Items);
+    }
+
+    [Fact]
+    public async Task FetchPageAsync_AllRetriesExhausted_ThrowsHttpRequestException()
+    {
+        HttpResponseMessage r1 = new(HttpStatusCode.TooManyRequests);
+        r1.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.Zero);
+
+        HttpResponseMessage r2 = new(HttpStatusCode.TooManyRequests);
+        r2.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.Zero);
+
+        SequentialHttpHandler handler = new(r1, r2);
+        HttpClient httpClient = new(handler);
+        MolitOptions options = new()
+        {
+            ServiceKey = "test-key",
+            BaseUrl = "http://localhost",
+            PageSize = 100,
+            MaxRetries = 1,
+        };
+
+        RealEstateApiClient client = new(
+            httpClient, Options.Create(options), NullLogger<RealEstateApiClient>.Instance);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            client.FetchPageAsync(PropertyType.Land, "11680", "202601", 1, 100));
+    }
+
     private static RealEstateApiClient CreateClient(string xmlResponse)
     {
         FakeHttpMessageHandler handler = new(xmlResponse);
@@ -473,6 +553,23 @@ public sealed class RealEstateApiClientTests
                 Content = new StringContent(_responseContent, Encoding.UTF8, "application/xml"),
             };
             return Task.FromResult(response);
+        }
+    }
+
+    private sealed class SequentialHttpHandler : HttpMessageHandler
+    {
+        private readonly Queue<HttpResponseMessage> _responses;
+
+        public SequentialHttpHandler(params HttpResponseMessage[] responses)
+        {
+            _responses = new Queue<HttpResponseMessage>(responses);
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(_responses.Dequeue());
         }
     }
 }
