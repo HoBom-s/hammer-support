@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Xml;
 using System.Xml.Serialization;
 using Hammer.Support.Application.Abstractions;
@@ -86,7 +87,8 @@ public sealed class RealEstateApiClient : IRealEstateApiClient
             dealYmd,
             pageNo);
 
-        using Stream stream = await _httpClient.GetStreamAsync(uri, cancellationToken);
+        using HttpResponseMessage httpResponse = await SendWithRetryAsync(uri, cancellationToken);
+        using Stream stream = await httpResponse.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = XmlReader.Create(stream, _readerSettings);
 
         var response = (MolitResponse?)_serializer.Deserialize(reader);
@@ -171,4 +173,46 @@ public sealed class RealEstateApiClient : IRealEstateApiClient
 
     private static int? ParseNullableInt(string value) =>
         int.TryParse(value.Trim(), out var result) ? result : null;
+
+    /// <summary>
+    ///     Sends a GET request with automatic retry on HTTP 429 (Too Many Requests).
+    ///     Uses exponential backoff or the Retry-After header value when present.
+    /// </summary>
+    /// <param name="uri">The request URI.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A successful HTTP response.</returns>
+    private async Task<HttpResponseMessage> SendWithRetryAsync(Uri uri, CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt <= _options.MaxRetries; attempt++)
+        {
+            HttpResponseMessage response = await _httpClient.GetAsync(
+                uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+            if (response.StatusCode != HttpStatusCode.TooManyRequests)
+            {
+                response.EnsureSuccessStatusCode();
+                return response;
+            }
+
+            TimeSpan retryDelay = response.Headers.RetryAfter?.Delta
+                ?? TimeSpan.FromSeconds(Math.Pow(2, attempt));
+            response.Dispose();
+
+            if (attempt == _options.MaxRetries)
+                break;
+
+            _logger.LogWarning(
+                "MOLIT API rate limited (429), retrying in {DelaySeconds:F1}s (attempt {Attempt}/{MaxRetries})",
+                retryDelay.TotalSeconds,
+                attempt + 1,
+                _options.MaxRetries);
+
+            await Task.Delay(retryDelay, cancellationToken);
+        }
+
+        throw new HttpRequestException(
+            $"MOLIT API rate limited after {_options.MaxRetries + 1} attempts",
+            null,
+            HttpStatusCode.TooManyRequests);
+    }
 }

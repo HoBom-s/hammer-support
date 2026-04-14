@@ -22,4 +22,10 @@ public sealed class MolitOptions
 
     /// <summary>Gets or sets the number of months to look back for trade data.</summary>
     public int MonthsToCollect { get; set; } = 3;
+
+    /// <summary>Gets or sets the maximum number of retries when rate limited (HTTP 429).</summary>
+    public int MaxRetries { get; set; } = 3;
+
+    /// <summary>Gets or sets the delay in milliseconds between API requests.</summary>
+    public int RequestDelayMs { get; set; } = 200;
 }
