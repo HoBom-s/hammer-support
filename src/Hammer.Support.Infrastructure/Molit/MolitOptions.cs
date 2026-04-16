@@ -27,5 +27,5 @@ public sealed class MolitOptions
     public int MaxRetries { get; set; } = 3;
 
     /// <summary>Gets or sets the delay in milliseconds between API requests.</summary>
-    public int RequestDelayMs { get; set; } = 200;
+    public int RequestDelayMs { get; set; } = 1000;
 }
