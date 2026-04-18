@@ -28,4 +28,7 @@ public sealed class MolitOptions
 
     /// <summary>Gets or sets the delay in milliseconds between API requests.</summary>
     public int RequestDelayMs { get; set; } = 1000;
+
+    /// <summary>Gets or sets the delay in milliseconds between property type groups to avoid exhausting the shared rate limit.</summary>
+    public int InterTypeDelayMs { get; set; } = 60_000;
 }

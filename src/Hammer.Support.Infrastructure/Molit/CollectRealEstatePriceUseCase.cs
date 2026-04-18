@@ -134,27 +134,47 @@ public sealed class CollectRealEstatePriceUseCase : ICollectRealEstatePriceUseCa
         // 2. Generate deal year-months to query
         List<string> dealYmds = GenerateDealYmds(_options.MonthsToCollect);
 
-        // 3. Fetch and publish
+        // 3. Fetch and publish — group by property type with cooldown between groups
+        //    to avoid exhausting the shared MOLIT API rate limit.
         var totalProcessed = 0;
         var totalFailed = 0;
+        var isFirstGroup = true;
 
-        foreach ((string LawdCd, PropertyType Type) query in queries)
+        IEnumerable<IGrouping<PropertyType, (string LawdCd, PropertyType Type)>> typeGroups =
+            queries.GroupBy(q => q.Type);
+
+        foreach (IGrouping<PropertyType, (string LawdCd, PropertyType Type)> group in typeGroups)
         {
-            foreach (var dealYmd in dealYmds)
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            if (!isFirstGroup)
+                await Task.Delay(_options.InterTypeDelayMs, cancellationToken);
+            isFirstGroup = false;
+
+            _logger.LogInformation(
+                "Collecting {PropertyType} trades ({DistrictCount} districts)",
+                group.Key,
+                group.Count());
+
+            foreach ((string LawdCd, PropertyType Type) query in group)
             {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
+                foreach (var dealYmd in dealYmds)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
 
-                (int Processed, int Failed) counts = await FetchAndPublishAsync(
-                    query.Type,
-                    query.LawdCd,
-                    dealYmd,
-                    cancellationToken);
+                    (int Processed, int Failed) counts = await FetchAndPublishAsync(
+                        query.Type,
+                        query.LawdCd,
+                        dealYmd,
+                        cancellationToken);
 
-                totalProcessed += counts.Processed;
-                totalFailed += counts.Failed;
+                    totalProcessed += counts.Processed;
+                    totalFailed += counts.Failed;
 
-                await Task.Delay(_options.RequestDelayMs, cancellationToken);
+                    await Task.Delay(_options.RequestDelayMs, cancellationToken);
+                }
             }
         }
 
