@@ -71,7 +71,6 @@ public static class InfrastructureServiceRegistration
         services.AddHttpClient<ExpoPushSender>();
         services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<ExpoPushSender>());
         services.AddScoped<INotificationSender, InAppNotificationSender>();
-        services.AddScoped<INotificationTemplateService, NotificationTemplateService>();
         services.AddScoped<INotificationOrchestrator, NotificationOrchestrator>();
         services.AddHostedService<NotificationConsumer>();
 
