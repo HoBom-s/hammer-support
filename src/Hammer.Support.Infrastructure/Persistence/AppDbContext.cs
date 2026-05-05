@@ -17,9 +17,6 @@ public sealed class AppDbContext : DbContext
     {
     }
 
-    /// <summary>Gets the notification templates table.</summary>
-    public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
-
     /// <summary>Gets the notification logs table.</summary>
     public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
 
