@@ -13,7 +13,7 @@ internal sealed class NotificationTemplateClient(
     HttpClient httpClient,
     ILogger<NotificationTemplateClient> logger) : INotificationTemplateClient
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     /// <inheritdoc />
     public async Task<NotificationTemplateDto?> GetByKeyAsync(
@@ -32,7 +32,7 @@ internal sealed class NotificationTemplateClient(
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
-            return JsonSerializer.Deserialize<NotificationTemplateDto>(json, JsonOptions);
+            return JsonSerializer.Deserialize<NotificationTemplateDto>(json, _jsonOptions);
         }
         catch (HttpRequestException ex)
         {
