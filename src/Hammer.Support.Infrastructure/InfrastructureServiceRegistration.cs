@@ -1,4 +1,6 @@
+using Hammer.Support.Application;
 using Hammer.Support.Application.Abstractions;
+using Hammer.Support.Infrastructure.Http;
 using Hammer.Support.Infrastructure.Kafka;
 using Hammer.Support.Infrastructure.Molit;
 using Hammer.Support.Infrastructure.Notification;
@@ -66,7 +68,14 @@ public static class InfrastructureServiceRegistration
                 .UseSnakeCaseNamingConvention());
 
         // Notification
-        services.AddScoped<INotificationTemplateRepository, NotificationTemplateRepository>();
+        services.Configure<InternalApiSettings>(configuration.GetSection("InternalApi"));
+        services.AddHttpClient<INotificationTemplateClient, NotificationTemplateClient>(client =>
+        {
+            var baseUri = configuration["InternalApi:BaseUri"];
+
+            if (!string.IsNullOrWhiteSpace(baseUri))
+                client.BaseAddress = new Uri(baseUri);
+        });
         services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
         services.AddHttpClient<ExpoPushSender>();
         services.AddScoped<INotificationSender>(sp => sp.GetRequiredService<ExpoPushSender>());

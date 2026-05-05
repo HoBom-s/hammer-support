@@ -15,22 +15,22 @@ internal sealed class NotificationOrchestrator : INotificationOrchestrator
     private readonly ILogger<NotificationOrchestrator> _logger;
     private readonly INotificationLogRepository _logRepo;
     private readonly Dictionary<NotificationChannel, INotificationSender> _senders;
-    private readonly INotificationTemplateRepository _templateRepo;
+    private readonly INotificationTemplateClient _templateClient;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="NotificationOrchestrator" /> class.
     /// </summary>
-    /// <param name="templateRepo">Notification template repository.</param>
+    /// <param name="templateClient">Notification template HTTP client.</param>
     /// <param name="logRepo">Notification log repository.</param>
     /// <param name="senders">Registered notification senders.</param>
     /// <param name="logger">Logger instance.</param>
     public NotificationOrchestrator(
-        INotificationTemplateRepository templateRepo,
+        INotificationTemplateClient templateClient,
         INotificationLogRepository logRepo,
         IEnumerable<INotificationSender> senders,
         ILogger<NotificationOrchestrator> logger)
     {
-        _templateRepo = templateRepo;
+        _templateClient = templateClient;
         _logRepo = logRepo;
         _senders = senders.ToDictionary(s => s.Channel);
         _logger = logger;
@@ -41,16 +41,16 @@ internal sealed class NotificationOrchestrator : INotificationOrchestrator
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        NotificationTemplate? notificationTemplate = await _templateRepo.GetByKeyAsync(request.TemplateKey, cancellationToken);
+        NotificationTemplateDto? template = await _templateClient.GetByKeyAsync(request.TemplateKey, cancellationToken);
 
-        if (notificationTemplate is null)
+        if (template is null)
         {
             _logger.LogWarning("Template not found: {TemplateKey}", request.TemplateKey);
             return;
         }
 
-        var title = TemplateRenderer.Render(notificationTemplate.TitleTemplate, request.Variables, out IReadOnlyList<string> titleUnmatched);
-        var body = TemplateRenderer.Render(notificationTemplate.BodyTemplate, request.Variables, out IReadOnlyList<string> bodyUnmatched);
+        var title = TemplateRenderer.Render(template.TitleTemplate, request.Variables, out IReadOnlyList<string> titleUnmatched);
+        var body = TemplateRenderer.Render(template.BodyTemplate, request.Variables, out IReadOnlyList<string> bodyUnmatched);
 
         if (titleUnmatched.Count > 0 || bodyUnmatched.Count > 0)
         {
@@ -58,7 +58,7 @@ internal sealed class NotificationOrchestrator : INotificationOrchestrator
             _logger.LogWarning("Unmatched placeholders for template {TemplateKey}: {Placeholders}", request.TemplateKey, string.Join(", ", all));
         }
 
-        IReadOnlyList<NotificationChannel> channels = notificationTemplate.Channel.Resolve();
+        IReadOnlyList<NotificationChannel> channels = Enum.Parse<NotificationChannel>(template.Channel).Resolve();
 
         foreach (NotificationChannel channel in channels)
         {
@@ -68,7 +68,7 @@ internal sealed class NotificationOrchestrator : INotificationOrchestrator
                 continue;
             }
 
-            await SendAndLogAsync(sender, notificationTemplate.Id, request.RecipientToken, title, body, cancellationToken);
+            await SendAndLogAsync(sender, template.Id, request.RecipientToken, title, body, cancellationToken);
         }
     }
 

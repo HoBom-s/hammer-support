@@ -11,7 +11,7 @@ namespace Hammer.Support.Tests.Infrastructure.Notification;
 
 public sealed class NotificationOrchestratorTests
 {
-    private readonly INotificationTemplateRepository _templateRepo = Substitute.For<INotificationTemplateRepository>();
+    private readonly INotificationTemplateClient _templateClient = Substitute.For<INotificationTemplateClient>();
     private readonly INotificationLogRepository _logRepo = Substitute.For<INotificationLogRepository>();
     private readonly INotificationSender _pushSender = Substitute.For<INotificationSender>();
     private readonly INotificationSender _inAppSender = Substitute.For<INotificationSender>();
@@ -23,7 +23,7 @@ public sealed class NotificationOrchestratorTests
         _inAppSender.Channel.Returns(NotificationChannel.InApp);
 
         _sut = new NotificationOrchestrator(
-            _templateRepo,
+            _templateClient,
             _logRepo,
             [_pushSender, _inAppSender],
             Substitute.For<ILogger<NotificationOrchestrator>>());
@@ -40,8 +40,8 @@ public sealed class NotificationOrchestratorTests
     [Fact]
     public async Task ProcessAsync_TemplateNotFound_ReturnsWithoutSending()
     {
-        _templateRepo.GetByKeyAsync("missing", Arg.Any<CancellationToken>())
-            .Returns((NotificationTemplate?)null);
+        _templateClient.GetByKeyAsync("missing", Arg.Any<CancellationToken>())
+            .Returns((NotificationTemplateDto?)null);
 
         await _sut.ProcessAsync(CreateRequest("missing"));
 
@@ -52,8 +52,8 @@ public sealed class NotificationOrchestratorTests
     [Fact]
     public async Task ProcessAsync_PushChannel_SavesPendingThenUpdatesSent()
     {
-        NotificationTemplate template = CreateTemplate(NotificationChannel.Push);
-        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        NotificationTemplateDto template = CreateTemplate(NotificationChannel.Push);
+        _templateClient.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
 
         await _sut.ProcessAsync(CreateRequest());
 
@@ -73,8 +73,8 @@ public sealed class NotificationOrchestratorTests
     [Fact]
     public async Task ProcessAsync_BothChannel_SendsToPushAndInApp()
     {
-        NotificationTemplate template = CreateTemplate(NotificationChannel.Both);
-        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        NotificationTemplateDto template = CreateTemplate(NotificationChannel.Both);
+        _templateClient.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
 
         await _sut.ProcessAsync(CreateRequest());
 
@@ -87,8 +87,8 @@ public sealed class NotificationOrchestratorTests
     [Fact]
     public async Task ProcessAsync_SenderThrows_LogsFailedStatus()
     {
-        NotificationTemplate template = CreateTemplate(NotificationChannel.Push);
-        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        NotificationTemplateDto template = CreateTemplate(NotificationChannel.Push);
+        _templateClient.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
         _pushSender.SendAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("Push unavailable"));
 
@@ -106,8 +106,8 @@ public sealed class NotificationOrchestratorTests
     [Fact]
     public async Task ProcessAsync_RendersTemplateVariables()
     {
-        NotificationTemplate template = CreateTemplate(NotificationChannel.InApp);
-        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        NotificationTemplateDto template = CreateTemplate(NotificationChannel.InApp);
+        _templateClient.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
 
         await _sut.ProcessAsync(CreateRequest());
 
@@ -119,13 +119,13 @@ public sealed class NotificationOrchestratorTests
     {
         // Create orchestrator with only InApp sender (no Push sender)
         NotificationOrchestrator orchestrator = new(
-            _templateRepo,
+            _templateClient,
             _logRepo,
             [_inAppSender],
             Substitute.For<ILogger<NotificationOrchestrator>>());
 
-        NotificationTemplate template = CreateTemplate(NotificationChannel.Push);
-        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        NotificationTemplateDto template = CreateTemplate(NotificationChannel.Push);
+        _templateClient.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
 
         await orchestrator.ProcessAsync(CreateRequest());
 
@@ -136,8 +136,8 @@ public sealed class NotificationOrchestratorTests
     [Fact]
     public async Task ProcessAsync_SaveAsyncThrows_PropagatesException()
     {
-        NotificationTemplate template = CreateTemplate(NotificationChannel.Push);
-        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        NotificationTemplateDto template = CreateTemplate(NotificationChannel.Push);
+        _templateClient.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
         _logRepo.SaveAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("DB connection lost"));
 
@@ -150,8 +150,8 @@ public sealed class NotificationOrchestratorTests
     [Fact]
     public async Task ProcessAsync_UpdateAsyncThrows_DoesNotCrash()
     {
-        NotificationTemplate template = CreateTemplate(NotificationChannel.Push);
-        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        NotificationTemplateDto template = CreateTemplate(NotificationChannel.Push);
+        _templateClient.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
         _logRepo.UpdateAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("DB timeout"));
 
@@ -164,8 +164,8 @@ public sealed class NotificationOrchestratorTests
     [Fact]
     public async Task ProcessAsync_SaveCalledBeforeSend()
     {
-        NotificationTemplate template = CreateTemplate(NotificationChannel.Push);
-        _templateRepo.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
+        NotificationTemplateDto template = CreateTemplate(NotificationChannel.Push);
+        _templateClient.GetByKeyAsync("test_key", Arg.Any<CancellationToken>()).Returns(template);
 
         var callOrder = new List<string>();
         _logRepo.SaveAsync(Arg.Any<NotificationLog>(), Arg.Any<CancellationToken>())
@@ -191,13 +191,6 @@ public sealed class NotificationOrchestratorTests
             Variables = new Dictionary<string, string> { ["name"] = "Fox" },
         };
 
-    private static NotificationTemplate CreateTemplate(NotificationChannel channel = NotificationChannel.Push) =>
-        new()
-        {
-            Id = Guid.NewGuid(),
-            TemplateKey = "test_key",
-            TitleTemplate = "Hello {name}",
-            BodyTemplate = "Welcome {name}!",
-            Channel = channel,
-        };
+    private static NotificationTemplateDto CreateTemplate(NotificationChannel channel = NotificationChannel.Push) =>
+        new(Guid.NewGuid(), "test_key", "Hello {name}", "Welcome {name}!", channel.ToString());
 }
