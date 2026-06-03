@@ -77,21 +77,22 @@ public sealed class NaverNewsApiClient : INaverNewsApiClient
 
     private static DateTimeOffset ParsePubDate(string pubDate)
     {
-        // Naver API returns RFC 1123 format: "Mon, 02 Jun 2025 09:00:00 +0900"
+        // Naver API returns RFC 1123 format: "Mon, 02 Jun 2025 09:00:00 +0900".
+        // Normalize to UTC: PostgreSQL 'timestamp with time zone' only accepts offset 0.
         if (DateTimeOffset.TryParseExact(
                 pubDate,
                 "ddd, dd MMM yyyy HH:mm:ss zzz",
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
                 out DateTimeOffset parsed))
-            return parsed;
+            return parsed.ToUniversalTime();
 
         if (DateTimeOffset.TryParse(
                 pubDate,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
                 out DateTimeOffset fallback))
-            return fallback;
+            return fallback.ToUniversalTime();
 
         return DateTimeOffset.UtcNow;
     }
