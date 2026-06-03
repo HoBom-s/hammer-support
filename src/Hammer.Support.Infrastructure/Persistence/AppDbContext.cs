@@ -20,6 +20,9 @@ public sealed class AppDbContext : DbContext
     /// <summary>Gets the notification logs table.</summary>
     public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
 
+    /// <summary>Gets the news articles table.</summary>
+    public DbSet<NewsArticle> NewsArticles => Set<NewsArticle>();
+
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

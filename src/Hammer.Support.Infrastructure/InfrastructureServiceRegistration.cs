@@ -3,6 +3,7 @@ using Hammer.Support.Application.Abstractions;
 using Hammer.Support.Infrastructure.Http;
 using Hammer.Support.Infrastructure.Kafka;
 using Hammer.Support.Infrastructure.Molit;
+using Hammer.Support.Infrastructure.Naver;
 using Hammer.Support.Infrastructure.Notification;
 using Hammer.Support.Infrastructure.Onbid;
 using Hammer.Support.Infrastructure.Onbid.CodeInfo;
@@ -61,6 +62,13 @@ public static class InfrastructureServiceRegistration
             client.Timeout = TimeSpan.FromSeconds(60);
         });
         services.AddScoped<ICollectRealEstatePriceUseCase, CollectRealEstatePriceUseCase>();
+
+        // Naver
+        services.Configure<NaverOptions>(configuration.GetSection(NaverOptions.SectionName));
+        services.AddHttpClient<INaverNewsApiClient, NaverNewsApiClient>();
+        services.AddScoped<INewsArticleRepository, NewsArticleRepository>();
+        services.AddScoped<ICollectNewsUseCase, CollectNaverNewsUseCase>();
+        services.AddHostedService<NewsCollectionJob>();
 
         // PostgreSQL + EF Core
         services.AddDbContext<AppDbContext>(options =>
