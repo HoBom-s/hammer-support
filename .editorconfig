@@ -229,6 +229,9 @@ dotnet_diagnostic.CA1707.severity = none
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = none
 
+# IDE0011: Add braces (conflicts with csharp_prefer_braces = when_multiline)
+dotnet_diagnostic.IDE0011.severity = none
+
 #### StyleCop overrides ####
 # SA1101: Prefix local calls with this (conflicts with _field pattern)
 dotnet_diagnostic.SA1101.severity = none

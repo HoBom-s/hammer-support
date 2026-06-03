@@ -6,9 +6,10 @@ obj/
 *.userosscache
 *.sln.docstates
 
-## Build results
+## Build results (including backslash path artifacts)
 [Dd]ebug/
 [Rr]elease/
+**/bin\\*
 x64/
 x86/
 [Ww][Ii][Nn]32/

@@ -38,7 +38,7 @@ public sealed class OnbidOptions
     /// <summary>
     /// Gets or sets the number of items per page.
     /// </summary>
-    public int PageSize { get; set; } = 100;
+    public int PageSize { get; set; } = 1000;
 
     /// <summary>
     /// Gets or sets the hour (0-23, KST) at which the daily collection job runs.

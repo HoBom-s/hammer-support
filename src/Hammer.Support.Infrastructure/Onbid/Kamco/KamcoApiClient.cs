@@ -8,7 +8,7 @@ using Hammer.Support.Infrastructure.Onbid.Dto;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Hammer.Support.Infrastructure.Onbid;
+namespace Hammer.Support.Infrastructure.Onbid.Kamco;
 
 /// <summary>
 /// HTTP client for fetching KAMCO auction items from the Onbid API.
@@ -47,10 +47,11 @@ public sealed class KamcoApiClient : IKamcoApiClient
     {
         // WARNING: ServiceKey is in the query string per Onbid API design.
         // Never log this URI to avoid credential exposure.
-        Uri uri = new($"{_options.KamcoBaseUrl}/getKamcoPblsalThingInquire"
+        Uri uri = new($"{_options.KamcoBaseUrl}/getKamcoPbctCltrList"
             + $"?ServiceKey={_options.ServiceKey}"
             + $"&numOfRows={numOfRows}"
-            + $"&pageNo={pageNo}");
+            + $"&pageNo={pageNo}"
+            + $"&DPSL_MTD_CD=0001");
 
         _logger.LogInformation("Fetching KAMCO auction page {PageNo} ({NumOfRows} rows)", pageNo, numOfRows);
 
@@ -82,21 +83,33 @@ public sealed class KamcoApiClient : IKamcoApiClient
 
     private static KamcoAuctionItem MapToDomain(OnbidKamcoItem dto) => new()
     {
-        PlnmNo = dto.PlnmNo,
-        PbctNo = dto.PbctNo,
-        CltrNo = dto.CltrNo,
+        PlnmNo = ParseLong(dto.PlnmNo),
+        PbctNo = ParseLong(dto.PbctNo),
+        PbctCdtnNo = ParseLong(dto.PbctCdtnNo),
+        CltrNo = ParseLong(dto.CltrNo),
+        CltrHstrNo = ParseLong(dto.CltrHstrNo),
+        CltrMnmtNo = dto.CltrMnmtNo,
         CltrNm = dto.CltrNm,
         CtgrFullNm = dto.CtgrFullNm,
         LdnmAdrs = dto.LdnmAdrs,
         NmrdAdrs = dto.NmrdAdrs,
-        MinBidPrc = dto.MinBidPrc,
-        ApslAsesAvgAmt = dto.ApslAsesAvgAmt,
+        DpslMtdCd = dto.DpslMtdCd,
+        DpslMtdNm = dto.DpslMtdNm,
+        MinBidPrc = ParseLong(dto.MinBidPrc),
+        ApslAsesAvgAmt = ParseLong(dto.ApslAsesAvgAmt),
+        FeeRate = dto.FeeRate,
         BidMtdNm = dto.BidMtdNm,
         PbctCltrStatNm = dto.PbctCltrStatNm,
         PbctBegnDtm = dto.PbctBegnDtm,
         PbctClsDtm = dto.PbctClsDtm,
-        UscbdCnt = dto.UscbdCnt,
-        IqryCnt = dto.IqryCnt,
+        UscbdCnt = ParseInt(dto.UscbdCnt),
+        IqryCnt = ParseInt(dto.IqryCnt),
         CltrImgFiles = dto.CltrImgFiles,
     };
+
+    private static long ParseLong(string value) =>
+        long.TryParse(value, out var result) ? result : 0;
+
+    private static int ParseInt(string value) =>
+        int.TryParse(value, out var result) ? result : 0;
 }

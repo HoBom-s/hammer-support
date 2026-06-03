@@ -10,7 +10,7 @@ Hammer 경매 플랫폼의 Support Service.
 ## Features
 
 - 온비드(캠코) 공매 데이터 수집 → Kafka 발행 (매일 배치, 실행 시각 설정 가능, stateless)
-- FCM 푸시 알림
+- Expo Push API 푸시 알림
 - 기타 cross-cutting 서포트 기능
 
 ## Architecture
@@ -34,7 +34,7 @@ hammer-collector ← 각 서비스 로그 수집 → ELK
 | [hammer-user](https://github.com/HoBom-s/hammer-user) | User & Auth |
 | [hammer-auction](https://github.com/HoBom-s/hammer-auction) | BFF, Auction API |
 | [hammer-collector](https://github.com/HoBom-s/hammer-collector) | ELK Logging |
-| [hammer-support](https://github.com/HoBom-s/hammer-support) | Data Fetching, FCM, Support |
+| [hammer-support](https://github.com/HoBom-s/hammer-support) | Data Fetching, Push Notification, Support |
 
 ## Configuration
 

@@ -4,6 +4,7 @@ using System.Text;
 using Hammer.Support.Application.Models;
 using Hammer.Support.Domain.Models;
 using Hammer.Support.Infrastructure.Onbid;
+using Hammer.Support.Infrastructure.Onbid.Kamco;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -30,13 +31,19 @@ public sealed class KamcoApiClientTests
                                        <item>
                                            <PLNM_NO>100</PLNM_NO>
                                            <PBCT_NO>200</PBCT_NO>
+                                           <PBCT_CDTN_NO>400</PBCT_CDTN_NO>
                                            <CLTR_NO>300</CLTR_NO>
+                                           <CLTR_HSTR_NO>500</CLTR_HSTR_NO>
+                                           <CLTR_MNMT_NO>2025-00001-001</CLTR_MNMT_NO>
                                            <CLTR_NM>서울 강남구</CLTR_NM>
                                            <CTGR_FULL_NM>토지 / 대지</CTGR_FULL_NM>
                                            <LDNM_ADRS>서울 강남구 123</LDNM_ADRS>
                                            <NMRD_ADRS>테헤란로 1</NMRD_ADRS>
+                                           <DPSL_MTD_CD>0001</DPSL_MTD_CD>
+                                           <DPSL_MTD_NM>매각</DPSL_MTD_NM>
                                            <MIN_BID_PRC>500000000</MIN_BID_PRC>
                                            <APSL_ASES_AVG_AMT>700000000</APSL_ASES_AVG_AMT>
+                                           <FEE_RATE>(100%)</FEE_RATE>
                                            <BID_MTD_NM>일반경쟁</BID_MTD_NM>
                                            <PBCT_CLTR_STAT_NM>입찰진행중</PBCT_CLTR_STAT_NM>
                                            <PBCT_BEGN_DTM>20260325100000</PBCT_BEGN_DTM>

@@ -30,13 +30,19 @@ public sealed class OnbidResponseDeserializationTests
                         <item>
                             <PLNM_NO>100</PLNM_NO>
                             <PBCT_NO>200</PBCT_NO>
+                            <PBCT_CDTN_NO>400</PBCT_CDTN_NO>
                             <CLTR_NO>300</CLTR_NO>
+                            <CLTR_HSTR_NO>500</CLTR_HSTR_NO>
+                            <CLTR_MNMT_NO>2025-00001-001</CLTR_MNMT_NO>
                             <CLTR_NM>서울 강남구 역삼동</CLTR_NM>
                             <CTGR_FULL_NM>토지 / 대지</CTGR_FULL_NM>
                             <LDNM_ADRS>서울 강남구 역삼동 123</LDNM_ADRS>
                             <NMRD_ADRS>서울 강남구 테헤란로 1</NMRD_ADRS>
+                            <DPSL_MTD_CD>0001</DPSL_MTD_CD>
+                            <DPSL_MTD_NM>매각</DPSL_MTD_NM>
                             <MIN_BID_PRC>500000000</MIN_BID_PRC>
                             <APSL_ASES_AVG_AMT>700000000</APSL_ASES_AVG_AMT>
+                            <FEE_RATE>(100%)</FEE_RATE>
                             <BID_MTD_NM>일반경쟁</BID_MTD_NM>
                             <PBCT_CLTR_STAT_NM>입찰진행중</PBCT_CLTR_STAT_NM>
                             <PBCT_BEGN_DTM>20260325100000</PBCT_BEGN_DTM>
@@ -47,13 +53,19 @@ public sealed class OnbidResponseDeserializationTests
                         <item>
                             <PLNM_NO>101</PLNM_NO>
                             <PBCT_NO>201</PBCT_NO>
+                            <PBCT_CDTN_NO>401</PBCT_CDTN_NO>
                             <CLTR_NO>301</CLTR_NO>
+                            <CLTR_HSTR_NO>501</CLTR_HSTR_NO>
+                            <CLTR_MNMT_NO>2025-00002-001</CLTR_MNMT_NO>
                             <CLTR_NM>부산 해운대구</CLTR_NM>
                             <CTGR_FULL_NM>건물 / 아파트</CTGR_FULL_NM>
                             <LDNM_ADRS>부산 해운대구 456</LDNM_ADRS>
                             <NMRD_ADRS>부산 해운대로 2</NMRD_ADRS>
+                            <DPSL_MTD_CD>0001</DPSL_MTD_CD>
+                            <DPSL_MTD_NM>매각</DPSL_MTD_NM>
                             <MIN_BID_PRC>300000000</MIN_BID_PRC>
                             <APSL_ASES_AVG_AMT>400000000</APSL_ASES_AVG_AMT>
+                            <FEE_RATE>(90%)</FEE_RATE>
                             <BID_MTD_NM>일반경쟁</BID_MTD_NM>
                             <PBCT_CLTR_STAT_NM>입찰준비중</PBCT_CLTR_STAT_NM>
                             <PBCT_BEGN_DTM>20260401100000</PBCT_BEGN_DTM>
@@ -73,15 +85,15 @@ public sealed class OnbidResponseDeserializationTests
         Assert.Equal(2, response.Body.Items.ItemList.Count);
 
         OnbidKamcoItem first = response.Body.Items.ItemList[0];
-        Assert.Equal(100, first.PlnmNo);
-        Assert.Equal(200, first.PbctNo);
-        Assert.Equal(300, first.CltrNo);
+        Assert.Equal("100", first.PlnmNo);
+        Assert.Equal("200", first.PbctNo);
+        Assert.Equal("300", first.CltrNo);
         Assert.Equal("서울 강남구 역삼동", first.CltrNm);
-        Assert.Equal(500000000, first.MinBidPrc);
-        Assert.Equal(700000000, first.ApslAsesAvgAmt);
+        Assert.Equal("500000000", first.MinBidPrc);
+        Assert.Equal("700000000", first.ApslAsesAvgAmt);
         Assert.Equal("20260325100000", first.PbctBegnDtm);
-        Assert.Equal(3, first.UscbdCnt);
-        Assert.Equal(42, first.IqryCnt);
+        Assert.Equal("3", first.UscbdCnt);
+        Assert.Equal("42", first.IqryCnt);
     }
 
     [Fact]

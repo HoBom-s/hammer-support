@@ -24,4 +24,9 @@ public sealed class KafkaOptions
     /// Gets or sets maximum number of messages to batch before sending.
     /// </summary>
     public int BatchSize { get; set; } = 100;
+
+    /// <summary>
+    /// Gets or sets the consumer group ID for Kafka consumers.
+    /// </summary>
+    public string ConsumerGroupId { get; set; } = "hammer-support";
 }

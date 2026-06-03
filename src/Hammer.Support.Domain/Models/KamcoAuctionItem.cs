@@ -16,9 +16,24 @@ public sealed record KamcoAuctionItem
     public long PbctNo { get; init; }
 
     /// <summary>
+    /// Gets the auction condition number (공매조건번호).
+    /// </summary>
+    public long PbctCdtnNo { get; init; }
+
+    /// <summary>
     /// Gets the item number (물건번호).
     /// </summary>
     public long CltrNo { get; init; }
+
+    /// <summary>
+    /// Gets the item history number (물건이력번호).
+    /// </summary>
+    public long CltrHstrNo { get; init; }
+
+    /// <summary>
+    /// Gets the item management number (물건관리번호).
+    /// </summary>
+    public string CltrMnmtNo { get; init; } = string.Empty;
 
     /// <summary>
     /// Gets the item name (물건명).
@@ -51,6 +66,21 @@ public sealed record KamcoAuctionItem
     public long ApslAsesAvgAmt { get; init; }
 
     /// <summary>
+    /// Gets the minimum bid price rate (최저입찰가율).
+    /// </summary>
+    public string FeeRate { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the disposal method code (처분방식코드: 0001=매각, 0002=임대).
+    /// </summary>
+    public string DpslMtdCd { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Gets the disposal method name (처분방식명).
+    /// </summary>
+    public string DpslMtdNm { get; init; } = string.Empty;
+
+    /// <summary>
     /// Gets the bid method name (입찰방식명).
     /// </summary>
     public string BidMtdNm { get; init; } = string.Empty;
@@ -81,7 +111,7 @@ public sealed record KamcoAuctionItem
     public int IqryCnt { get; init; }
 
     /// <summary>
-    /// Gets the item image files URL (물건이미지).
+    /// Gets the item image file URLs (물건이미지).
     /// </summary>
-    public string? CltrImgFiles { get; init; }
+    public IReadOnlyList<string> CltrImgFiles { get; init; } = [];
 }
